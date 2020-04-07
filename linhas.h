@@ -33,6 +33,16 @@ class Camera{
     Mat frame;
     Mat frame_roi;
     Mat segmented;
+    Mat erosion;
+    Mat dilation;
+    Mat binarized;
+    Mat skeleton;
+    Mat prune;
+
+    Mat element1 = getStructuringElement(MORPH_RECT,Size(1,7)); 		
+	Mat element2 = getStructuringElement(MORPH_RECT,Size(5,5)); 
+    Mat element3 = getStructuringElement(MORPH_CROSS,Size(3,3));
+    
     
     public:
     //Aqui você coloca os métodos
@@ -88,3 +98,25 @@ void Camera::Segmentation(Mat image){
 	this->segmented = image;
 }
 
+void Camera::morphologicalOperations(Mat image){
+    //Opening
+    erode(this->segmented,this->erosion,this->element1);
+    dilate(this->erosion,this->dilation,this->element2);
+    //Image Processing
+    threshold(this->dilation, this->binarized, 127, 255, cv::THRESH_BINARY); 
+    //Skeletonization
+    Mat skel(this->binarized.size(), CV_8UC1, cv::Scalar(0));
+    Mat temp;
+    
+    bool done;		
+    do{
+        erode(this->binarized, this->skeleton, this->element3);
+        dilate(this->skeleton, temp, this->element3); // temp = open(img)
+        subtract(this->binarized, temp, temp);
+        bitwise_or(skel, temp, skel);
+        this->skeleton.copyTo(this->binarized);
+        
+        done = (countNonZero(this->binarized) == 0);
+    } while (!done);
+    //Pruning
+}
