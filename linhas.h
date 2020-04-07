@@ -119,4 +119,5 @@ void Camera::morphologicalOperations(Mat image){
         done = (countNonZero(this->binarized) == 0);
     } while (!done);
     //Pruning
+    
 }
