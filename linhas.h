@@ -21,14 +21,15 @@ using namespace cv;
 class Camera{
     private:
     //Aqui você coloca as variáveis que a classe irá usar, os atributos
+    float k = 0.62;
+    float t = 18.0;
+    
+    
+    public:
     int id;
     int region;
     int height;
     int width;
-
-
-    float k = 0.62;
-    float t = 18.0;
     
     Mat frame;
     Mat frame_roi;
@@ -43,24 +44,42 @@ class Camera{
 	Mat element2 = getStructuringElement(MORPH_RECT,Size(5,5)); 
     Mat element3 = getStructuringElement(MORPH_CROSS,Size(3,3));
     
+    string original;
+    string processed;
+
     
-    public:
     //Aqui você coloca os métodos
-    Camera(int id_cam, int region, int rows, int cols);
+    Camera(int id_cam, int region);
 
     void namingVideo(string name);
-
+    void gettingSize(int width, int height);
     void creatingRoi(Mat image);
     void Segmentation(Mat image);
     void morphologicalOperations(Mat image);
 
 }; //<---Nunca esqueça desse ponto e vírgula, super importante!!
 
-Camera::Camera(int id_cam, int region, int rows, int cols){
+Camera::Camera(int id_cam, int region){
     this->id = id_cam;
     this->region = region;
-    this->height = rows;
-    this->width = cols;
+}
+
+void Camera::gettingSize(int width, int height){
+    this->width = width;
+    this->height = height;
+}
+
+void Camera::namingVideo(string name){
+    string pvideo = "PVideo_";
+    string cam = "Camera_";
+	string formato = ".avi";
+	pvideo += name;
+	pvideo += formato;
+	cam += name;
+	cam += formato;
+
+    this->original = cam;
+    this->processed = pvideo;
 }
 
 void Camera::creatingRoi(Mat image){
@@ -103,21 +122,24 @@ void Camera::morphologicalOperations(Mat image){
     erode(this->segmented,this->erosion,this->element1);
     dilate(this->erosion,this->dilation,this->element2);
     //Image Processing
-    threshold(this->dilation, this->binarized, 127, 255, cv::THRESH_BINARY); 
+    cvtColor(this->erosion, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
+    //threshold(this->dilation, this->binarized, 127, 255, THRESH_BINARY); 
     //Skeletonization
-    Mat skel(this->binarized.size(), CV_8UC1, cv::Scalar(0));
+    /*Mat skel(this->binarized.size(), CV_8UC1, Scalar(0));
     Mat temp;
     
     bool done;		
     do{
-        erode(this->binarized, this->skeleton, this->element3);
-        dilate(this->skeleton, temp, this->element3); // temp = open(img)
-        subtract(this->binarized, temp, temp);
+        morphologyEx(this->binarized, temp, MORPH_OPEN, this->element3);        subtract(this->binarized, temp, temp);
+        bitwise_not(temp, temp);
+        bitwise_and(this->binarized, temp, temp);
         bitwise_or(skel, temp, skel);
-        this->skeleton.copyTo(this->binarized);
-        
-        done = (countNonZero(this->binarized) == 0);
+        //this->skeleton.copyTo(this->binarized);
+
+        double max;
+        minMaxLoc(this->binarized, 0, &max);
+        done = (max == 0);
     } while (!done);
     //Pruning
-    
+    skel.copyTo(this->skeleton);*/
 }
