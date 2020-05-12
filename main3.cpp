@@ -27,11 +27,8 @@ int main(int argc, char *argv[]){
         imshow("Segmentation",cam.segmented);
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
-        cam.findingCenters(cam.morph);
-        cam.ordinating(cam.morph);
-        cam.MMQ(cam.np_min);
-        //cam.R();
-        cam.expanding_lines(cam.mmq);
+        cam.SegAndCluster(cam.skeleton,30);
+        cam.estimated_lines();
         cam.drawLines();
         
         char c = (char)waitKey(0);
