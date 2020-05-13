@@ -1,6 +1,7 @@
 /*Autores:
     Anniely Soares Lemos 
     Gustavo Henrique do Nascimento
+    //Fixing errors
 */
 
 #include "linhas.h"
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]){
         cam.expanding_lines(cam.mmq);
         cam.drawLines();
         
-        char c = (char)waitKey(100);
+        char c = (char)waitKey(0);
 			if( c == 27 ){
 				break;
 			}	
