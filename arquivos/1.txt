@@ -1,0 +1,3 @@
+Linha: 1 - xi: 498 yi: 0 xf: 442 yf: 180 coeficiente angular: -3.21429 coeficiente linear: 1600.71
+Linha: 2 - xi: 728 yi: 0 xf: 783 yf: 180 coeficiente angular: 3.27273 coeficiente linear: -2382.55
+Linha: 3 - xi: 939 yi: 0 xf: 957 yf: 180 coeficiente angular: 10 coeficiente linear: -9390
