@@ -9,6 +9,7 @@ int main(int argc, char *argv[]){
     string pref = "_metedo4_sainda.png";
     string path = "imagens/";
     string name;
+    string name_arq;
     Camera cam(0,4);
     cam.img_fn += argv[1];
     cam.img_fn += cam.img_ext;
@@ -23,11 +24,12 @@ int main(int argc, char *argv[]){
     cam.SegAndCluster(cam.skeleton,30);
     cam.estimated_lines();
     cam.drawLines();
-
+    name_arq += argv[1];
+    name_arq += "_metodo3";
     name += path;
     name += argv[1];
     name += pref;
-    cam.writingFile(argv[1]);
+    cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     cam.cap.release();
     destroyAllWindows();
