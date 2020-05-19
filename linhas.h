@@ -13,8 +13,11 @@
 
 //C++ stuff
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
 #include <stdlib.h>
-#include<math.h>
+#include <math.h>
 
 #define thrs 10
 
@@ -28,7 +31,6 @@ class Camera{
     float k = 0.62;
     float t = 18.0;
     
-    
     public:
     int id;
     int region;
@@ -37,6 +39,9 @@ class Camera{
 
     int np_min = 1;
     
+    string img_ext = ".jpg";
+    string img_fn;
+
     VideoCapture cap;
 
     Mat frame;
@@ -86,6 +91,8 @@ class Camera{
     vector<Point2f> final_coef;
 
     vector<Vec4f> lines;
+
+    ofstream arquivo;
     //Aqui você coloca os métodos
     Camera(int id_cam, int region);
 
@@ -107,7 +114,8 @@ class Camera{
     void estimated_lines();
     void drawLines();
     void centroids(Mat image);
-
+    void writingFile(string name);
+    
     int medianMatrix(Mat image);
 
 
@@ -135,6 +143,33 @@ void Camera::namingVideo(string name){
 
     this->original = cam;
     this->processed = pvideo;
+}
+
+void Camera::writingFile(string name){
+    string path = "arquivos/";
+    string extention = ".txt";
+    name += extention;
+    path += name;
+    this->arquivo.open(path, ios::out);
+    if(!this->arquivo){
+        cout << "Could not open the file"  << endl;
+        abort();
+    }   
+
+    for(int i = 0; i < this->lines.size(); i++){
+        double ang = (this->lines[i][3] - this->lines[i][1])/(this->lines[i][2] - this->lines[i][0]);
+        double lin = this->lines[i][1] - (ang)*(this->lines[i][0]);
+        this->arquivo << "Linha: " << i+ 1 
+        << " - xi: " << this->lines[i][0]
+        << " yi: " << this->lines[i][1]
+        << " xf: " << this->lines[i][2]
+        << " yf: " << this->lines[i][3]
+        << " coeficiente angular: " << ang
+        << " coeficiente linear: " << lin << endl;
+
+    }
+    
+    this->arquivo.close();
 }
 
 void Camera::creatingRoi(Mat image){
@@ -339,7 +374,7 @@ void Camera::findingCenters(Mat image){
         //cout << this->points[i] << endl;
 		circle(this->point, this->points[i], 4, color, -1, 8, 0 );
 	}
-	imshow("Centroides filtrados", this->point);
+	//imshow("Centroides filtrados", this->point);
 	//cout << "Quantidade de Centroides Filtrados  " << points.size() << endl;
 }
 
@@ -447,7 +482,7 @@ void Camera::hough(Mat image){
             
             }
 
-            imshow("Points",this->init_point);
+            //imshow("Points",this->init_point);
             
         }
     }
@@ -667,11 +702,11 @@ void Camera::dynamicROI(Mat image){
             plines.push_back(vaux);
             this->pline = plines;
             
-            imshow("Points",this->init_point);
-            imshow("Primeira",this->image_roi1);
-            imshow("Segunda",this->image_roi2);
-            imshow("Terceira",this->image_roi3);
-            imshow("Quarta",this->image_roi4);
+            //imshow("Points",this->init_point);
+            //imshow("Primeira",this->image_roi1);
+            //imshow("Segunda",this->image_roi2);
+            //imshow("Terceira",this->image_roi3);
+            //imshow("Quarta",this->image_roi4);
               
             
        
@@ -803,5 +838,5 @@ void Camera::drawLines(){
     for(int i = 0; i < this->lines.size(); i++){
 		line(this->frame_final, Point(this->lines[i][0], (this->lines[i][1] + (this->height - (this->height/this->region)))), Point(this->lines[i][2], (this->lines[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
-    imshow("Resultado",this->frame_final);
+    //imshow("Resultado",this->frame_final);
 }

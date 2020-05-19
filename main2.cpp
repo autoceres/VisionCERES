@@ -1,7 +1,6 @@
 /*Autores:
     Anniely Soares Lemos 
     Gustavo Henrique do Nascimento
-    //Fixing errors
 */
 
 #include "linhas.h"
