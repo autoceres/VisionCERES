@@ -30,19 +30,23 @@ endif()
 include_directories(${WIRINGPI_INCLUDE_DIRS})
 
 # Declare the executable target built from your sources
+add_executable(antigo antigo.cpp linhas.h)
 add_executable(main main.cpp linhas.h)
 add_executable(main2 main2.cpp linhas.h)
 add_executable(main3 main3.cpp linhas.h)
 add_executable(main_imagens main_imagens.cpp linhas.h)
 add_executable(main2_imagens main2_imagens.cpp linhas.h)
 add_executable(main3_imagens main3_imagens.cpp linhas.h)
+add_executable(antigo_imagens antigo_imagens.cpp linhas.h)
 #find_library(WIRINGPI_LIBRARIES NAMES wiringPi)
 
 # Link your application with OpenCV libraries
+target_link_libraries(antigo ${OpenCV_LIBS})
 target_link_libraries(main ${OpenCV_LIBS})
 target_link_libraries(main2 ${OpenCV_LIBS})
 target_link_libraries(main3 ${OpenCV_LIBS})
 target_link_libraries(main_imagens ${OpenCV_LIBS})
 target_link_libraries(main2_imagens ${OpenCV_LIBS})
 target_link_libraries(main3_imagens ${OpenCV_LIBS})
+target_link_libraries(antigo_imagens ${OpenCV_LIBS})
 #target_link_libraries(testesFURG ${WIRINGPI_LIBRARIES}) 
