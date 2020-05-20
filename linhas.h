@@ -21,7 +21,6 @@
 
 #define thrs 10
 
-
 using namespace std;
 using namespace cv;
 
@@ -91,7 +90,12 @@ class Camera{
     vector<Point2f> final_coef;
 
     vector<Vec4f> lines;
+    vector<Vec4d> lines_a;
+    vector<Vec4d> linesP;
 
+    vector<pair<double,double > > coef_retas; //Vetor de coeficientes, método antigo
+    vector<pair<double,double> > coef_med_retas; //Vetor de coeficientes médios, método antigo
+    
     ofstream arquivo;
     //Aqui você coloca os métodos
     Camera(int id_cam, int region);
@@ -99,25 +103,33 @@ class Camera{
     void namingVideo(string name);
     void gettingSize(int width, int height);
     void creatingRoi(Mat image);
+    
     void Segmentation(Mat image);
     void SegAndCluster(Mat image, int d);
     void morphologicalOperations(Mat image);
+    
+    void coefs1(vector<Vec4d> &vv);
+    void retas_med(vector<Vec4d> &pontos);
     void findingCenters(Mat image);
     void ordinating(Mat image);
     void hough(Mat image);
+    void houghP(Mat image);
     void miniROIs(Mat image);
     void dynamicROI(Mat image);
     void MMQ();
     void MMQ(int np_min);
     void R();
+    
     void expanding_lines(vector<Point2f> coef_retas);
+    void expanding_lines_a(vector<pair<double,double>> coef_retas);
     void estimated_lines();
     void drawLines();
+    void drawLines_a();
     void centroids(Mat image);
+    
     void writingFile(string name);
     
     int medianMatrix(Mat image);
-
 
     Point2f centroid(Mat image);
 }; //<---Nunca esqueça desse ponto e vírgula, super importante!!
@@ -313,6 +325,96 @@ bool cmpVec2x(Point2f &a, Point2f &b){
 		return a.x < b.x;	
 }
 
+bool cmpVecxf(Vec4d &a, Vec4d &b){
+	return a[2] < b[2];
+}
+
+void Camera::coefs1(vector<Vec4d> &vv){
+    vector<pair<double,double> > coef_temp;
+    this->coef_retas.clear();
+	double a = 0;
+	double b = 0;	
+	for(size_t i = 0; i<vv.size(); i++){
+		    //cout << "xi =  " << vv[i][0] << "   xf =  "  << vv[i][2] << endl;
+			Vec4f l = vv[i];
+			if(l[2] - l[0]){
+				a = (l[3] - l[1])/(l[2] - l[0]);
+				b = (l[1] - a*l[0]);
+				//cout << "coef ang:  " << a << "  coef lin:  " << b << endl;
+				coef_temp.push_back(make_pair(a,b));
+			}
+		}
+    this->coef_retas = coef_temp;
+}
+
+vector<pair<double,double > > coefs2(vector<vector<Vec4d> > &vv){
+	vector<pair<double,double> > coef_temp;	
+	double a = 0;
+	double b = 0;	
+	int j = 0;
+	//cout << vv.size() << endl;
+	for(size_t j = 0; j < vv.size(); j++){
+		for(size_t i = 0; i<vv[j].size(); i++){
+			Vec4d l = vv[j][i];
+			if((l[2] - l[0])!=0){
+				a = (l[3] - l[1])/(l[2] - l[0]);
+				b = (l[1] - a*l[0]);
+				cout << "coef ang:  " << a << "  coef lin:  " << b << endl;
+				coef_temp.push_back(make_pair(a,b));
+			}
+		}
+	}
+    return coef_temp;
+}
+
+void Camera::retas_med(vector<Vec4d> &pontos){
+	vector<vector<Vec4d> > classes_total;
+	//vector<Vec4d> init;
+	Vec4d trans;
+	
+	vector<pair<double,double > > ans;
+	
+	int j = 0;
+	
+    this->coef_med_retas.clear();
+
+	trans[0] = 0;
+	trans[1] = 0;
+	trans[2] = 0;
+	trans[3] = 0;
+
+	for(size_t i = 0;i<pontos.size();i++){
+	//cout << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
+		if(((pontos[i+1][2] - pontos[i][2])>-50)&&((pontos[i+1][2] - pontos[i][2])<50)){
+			trans[0] += pontos[i][0];
+			trans[1] += pontos[i][1];
+			trans[2] += pontos[i][2];
+			trans[3] += pontos[i][3];
+			j++;
+		}
+		else{
+			Vec4d med;
+			vector<Vec4d> classes;
+			//cout << "xi =  " << trans[0] << "  yi =  " << trans[1] << "  xf =  "  << trans[2] << " yf = " << trans[3] << endl;
+			med[0] = (trans[0]/j);
+			med[1] = (trans[1]/j);
+			med[2] = (trans[2]/j);
+			med[3] = (trans[3]/j);
+			//cout << "xi_med =  " << med[0] << "  yi_med =  " << med[1] << "  xf_med =  "  << med[2] << " yf_med = " << med[3] << endl;
+			classes.push_back(med);
+			classes_total.push_back(classes);
+			trans[0] = 0;
+			trans[1] = 0;
+			trans[2] = 0;
+			trans[3] = 0;
+			j = 0;
+		}
+	}
+	//cout << "Tamanho:  " << classes_total.size() << endl;
+	ans = coefs2(classes_total);
+	this->coef_med_retas = ans;
+}
+
 void Camera::findingCenters(Mat image){
 	this->point = Mat::zeros(Size(image.cols,image.rows),CV_8UC3);
     
@@ -486,6 +588,11 @@ void Camera::hough(Mat image){
             
         }
     }
+}
+
+void Camera::houghP(Mat image){
+    this->linesP.clear();
+    HoughLinesP(image, this->linesP, 1, CV_PI/180, 32, 65, 100); // 100, 100, 100); //32, 65, 100
 }
 
 void Camera::miniROIs(Mat image){
@@ -812,6 +919,39 @@ void Camera::expanding_lines(vector<Point2f> coef_retas){
 	this->lines  = lines;
 }
 
+void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
+	double xi = 0, yi = 0, xf = 0, yf = 0;
+    int aux = 0;
+    bool flag = false;
+	vector<Vec4d> lines;
+
+	lines.clear();
+    this->lines.clear();
+
+	for(int i = 0; i < coef_retas.size(); i++){	
+		if (!((coef_retas[i].first > -3) && (coef_retas[i].first < 3))){
+        xi = (yi - coef_retas[i].second)/coef_retas[i].first;
+		yf = (this->height/this->region);
+		xf = (yf - coef_retas[i].second)/coef_retas[i].first;
+				
+		if(xf>this->width){
+			xf = this->width;
+			yf = (coef_retas[i].first)*xf + coef_retas[i].second;
+    	}
+
+        
+            Vec4d x_ord_trans;
+            x_ord_trans[0] = xi;
+            x_ord_trans[1] = yi;
+            x_ord_trans[2] = xf;
+            x_ord_trans[3] = yf;
+            lines.push_back(x_ord_trans);
+        
+    }
+    }
+	this->lines_a  = lines;
+}
+
 void Camera::estimated_lines(){
 	int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
@@ -839,4 +979,12 @@ void Camera::drawLines(){
 		line(this->frame_final, Point(this->lines[i][0], (this->lines[i][1] + (this->height - (this->height/this->region)))), Point(this->lines[i][2], (this->lines[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
     //imshow("Resultado",this->frame_final);
+}
+
+void Camera::drawLines_a(){
+    cout << "Quantidade de linhas  " << this->lines_a.size() << endl;
+    for(int i = 0; i < this->lines_a.size(); i++){
+		line(this->frame_final, Point(this->lines_a[i][0], (this->lines_a[i][1] + (this->height - (this->height/this->region)))), Point(this->lines_a[i][2], (this->lines_a[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
+	}
+    imshow("Resultado",this->frame_final);
 }
