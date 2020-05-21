@@ -37,6 +37,8 @@ class Camera{
     int width;
 
     int np_min = 1;
+
+    int pb;
     
     string img_ext = ".jpg";
     string img_fn;
@@ -84,14 +86,21 @@ class Camera{
     vector<int> size_classes;
 
     vector<Vec2f> coefs; //Primeiro m, segundo d;
+    
     vector<Mat> miniROI;
-
+    vector<Mat> clusters;
     vector<Point2f> mmq;
     vector<Point2f> final_coef;
 
     vector<Vec4f> lines;
+    
     vector<Vec4d> lines_a;
     vector<Vec4d> linesP;
+
+    vector<vector<Vec2f> > linesC;
+    vector<vector<Point2f> > coefsC;
+    
+    vector<Vec4f> flinesC;
 
     vector<pair<double,double > > coef_retas; //Vetor de coeficientes, método antigo
     vector<pair<double,double> > coef_med_retas; //Vetor de coeficientes médios, método antigo
@@ -106,25 +115,33 @@ class Camera{
     
     void Segmentation(Mat image);
     void SegAndCluster(Mat image, int d);
+    void verifingClusters(vector<vector<Point2f> > pline);
     void morphologicalOperations(Mat image);
     
-    void coefs1(vector<Vec4d> &vv);
-    void retas_med(vector<Vec4d> &pontos);
-    void findingCenters(Mat image);
-    void ordinating(Mat image);
+    
+    void coefs1(vector<Vec4d> &vv); //Calcula os coeficientes das retas do HoughP
+    void retas_med(vector<Vec4d> &pontos); //Calcula as retas médias no método antigo
+    void findingCenters(Mat image); //Acha o centroide da imagem
+    void ordinating(Mat image); 
     void hough(Mat image);
     void houghP(Mat image);
     void miniROIs(Mat image);
+    void ROIsOfClusters(Mat image);
+    void houghOnClusters(vector<Mat> image);
+    void coefsCluster(vector<vector<Vec2f> > lines);
     void dynamicROI(Mat image);
     void MMQ();
     void MMQ(int np_min);
     void R();
+    void estimated_lines();
     
+
     void expanding_lines(vector<Point2f> coef_retas);
     void expanding_lines_a(vector<pair<double,double>> coef_retas);
-    void estimated_lines();
+    void expanding_lines_c(vector<Point2f> coef_retas);
     void drawLines();
     void drawLines_a();
+    void drawLines_c();
     void centroids(Mat image);
     
     void writingFile(string name);
@@ -285,10 +302,45 @@ void Camera::SegAndCluster(Mat image, int d){
     cout << "Numero de pontos na classe: " << dot.size() << endl;
     cout << "Total de pixels brnacos: " << pb << endl; 
     dot.clear();
+    this-> pb = pb;
     this->pline = clusters;
     //cout << "Fim" << endl;
 }
-    
+
+void Camera::verifingClusters(vector<vector<Point2f> > line){
+    //bool check = true;
+    //while(check){
+    vector<vector<Point2f> > l;    
+    vector<Point2f> split1;
+    vector<Point2f> split2;
+
+    l.clear();
+    split1.clear();
+    split2.clear();
+
+        for(int i = 0; i < line.size(); i++){
+            if(line[i].size()!=0){
+                if(line[i].size() > (this->pb)*0.6){
+                    for(int j = 0; j < line[i].size(); j++){
+                        if(j > (line[i].size())/2){
+                            split1.push_back(line[i][j]);
+                        }
+                        else{
+                            split2.push_back(line[i][j]);
+                        }
+                    }
+                    l.push_back(split1);
+                    l.push_back(split2);
+                }
+                else{
+                    l.push_back(line[i]);
+                }
+            }
+        }
+    //}
+    this->pline = l;
+}
+
 void Camera::morphologicalOperations(Mat image){
     //Opening
     erode(this->segmented,this->erosion,this->element1);
@@ -556,8 +608,8 @@ void Camera::hough(Mat image){
         Vec2f auxp3;
         Vec2f auxp4;
 
-        auxc[0] = -(cos(lines[i][1])/sin(lines[i][1]));
-        auxc[1] = lines[i][0]/sin(lines[i][1]);
+        auxc[0] = -(cos(lines[i][1])/sin(lines[i][1])); //coef ang
+        auxc[1] = lines[i][0]/sin(lines[i][1]); //coef lin
         if(auxc[0] > 0){
             this->coefs.push_back(auxc);  
             auxp1[1] = this->frame_roi.rows;//y
@@ -612,6 +664,52 @@ void Camera::miniROIs(Mat image){
     imshow("Segunda",this->miniROI[1]);
     imshow("Terceira",this->miniROI[2]);
     imshow("Quarta",this->miniROI[3]);*/
+}
+
+void Camera::ROIsOfClusters(Mat image){
+    this->clusters.clear();
+    int xinit;
+    cout << this->pline.size() << endl;
+    for(int i = 0; i < this->pline.size(); i++){
+        if((pline[i].size()) > 30){
+            cout << i << endl;
+            xinit = (int)pline[i][0].x;
+            Rect ROI = Rect(xinit, 0,((pline[i][(pline[i].size() - 1)].x) - pline[i][0].x), image.rows);
+            Mat image_roi = image(ROI);
+            Mat aux;
+            image_roi.copyTo(aux);
+            this->clusters.push_back(aux);
+        }
+    }    
+}
+
+void Camera::houghOnClusters(vector<Mat> image){
+    vector<vector<Vec2f> > linesC;
+    for(int i = 0; i < this->clusters.size(); i++){
+        vector<Vec2f> lines;
+        HoughLines(image[i], lines, 1, CV_PI/180, 20, 0, 0);
+        linesC.push_back(lines);
+    }
+    
+    this-> linesC = linesC;
+}
+
+void Camera::coefsCluster(vector<vector<Vec2f> > lines){
+    vector<vector<Point2f> > coefs;
+    coefs.clear();
+
+    for(int i = 0; i < lines.size(); i++){
+        vector<Point2f> coefsC;
+        coefsC.clear();
+        for(int j = 0; j < lines[i].size(); j++){
+            Point2f auxc;
+            auxc.x = -(cos(lines[i][j][1])/sin(lines[i][j][1])); //coef ang
+            auxc.y = lines[i][j][0]/sin(lines[i][j][1]); //coef lin
+            coefsC.push_back(auxc);
+        }
+        coefs.push_back(coefsC);
+    }
+    this->coefsC = coefs;
 }
 
 int Camera::medianMatrix(Mat image){
@@ -952,6 +1050,62 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
 	this->lines_a  = lines;
 }
 
+void Camera::expanding_lines_c(vector<Point2f> coef_retas){
+	int xi = 0, yi = 0, xf = 0, yf = 0;
+    int aux = 0;
+    bool flag = false;
+	vector<Vec4f> lines;
+
+	lines.clear();
+    this->lines.clear();
+
+	for(int i = 0; i < coef_retas.size(); i++){	
+		if((pline[i].size()) > 50){
+            if (!((coef_retas[i].x > -3) && (coef_retas[i].x < 3))){
+                xi = (yi - coef_retas[i].y)/coef_retas[i].x;
+                if(xi < this->pline[i][0].x){
+                    xi = this->pline[i][0].x;
+                    yi = xi*(coef_retas[i].x) + coef_retas[i].y;
+                }
+                if(xi > this->pline[i][pline[i].size() - 1].x){
+                    xi = this->pline[i][pline[i].size() - 1].x;
+                    yi = xi*(coef_retas[i].x) + coef_retas[i].y;
+                }
+
+                yf = (this->height/this->region);
+                xf = (yf - coef_retas[i].y)/coef_retas[i].x;
+                        
+                if(xf>this->pline[i][pline[i].size() - 1].x){
+                    xf = this->pline[i][pline[i].size() - 1].x;
+                    yf = (coef_retas[i].x)*xf + coef_retas[i].y;
+                }
+
+                if(xf<this->pline[i][0].x){
+                    xf = this->pline[i][0].x;
+                    yf = (coef_retas[i].x)*xf + coef_retas[i].y;
+                }
+
+                
+                    Vec4f x_ord_trans;
+                    x_ord_trans[0] = xi;
+                    x_ord_trans[1] = yi;
+                    x_ord_trans[2] = xf;
+                    x_ord_trans[3] = yf;
+                    lines.push_back(x_ord_trans);
+            }
+            else{
+                Vec4f x_ord_trans;
+                x_ord_trans[0] = (pline[i][0].x + pline[i][(pline[i].size() - 1)].x)/2.0;
+                x_ord_trans[1] = 0;
+                x_ord_trans[2] = x_ord_trans[0];
+                x_ord_trans[3] = this->frame_roi.rows;
+                lines.push_back(x_ord_trans);
+            }    
+        }
+    }
+	this->lines  = lines;
+}
+
 void Camera::estimated_lines(){
 	int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
@@ -978,13 +1132,22 @@ void Camera::drawLines(){
     for(int i = 0; i < this->lines.size(); i++){
 		line(this->frame_final, Point(this->lines[i][0], (this->lines[i][1] + (this->height - (this->height/this->region)))), Point(this->lines[i][2], (this->lines[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
-    //imshow("Resultado",this->frame_final);
+    imshow("Resultado",this->frame_final);
 }
 
 void Camera::drawLines_a(){
     cout << "Quantidade de linhas  " << this->lines_a.size() << endl;
     for(int i = 0; i < this->lines_a.size(); i++){
 		line(this->frame_final, Point(this->lines_a[i][0], (this->lines_a[i][1] + (this->height - (this->height/this->region)))), Point(this->lines_a[i][2], (this->lines_a[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
+	}
+    imshow("Resultado",this->frame_final);
+}
+
+void Camera::drawLines_c(){
+    cout << "Quantidade de linhas  " << this->flinesC.size() << endl;
+
+    for(int i = 0; i < this->flinesC.size(); i++){
+		line(this->frame_final, Point(this->flinesC[i][0], (this->flinesC[i][1] + (this->height - (this->height/this->region)))), Point(this->flinesC[i][2], (this->flinesC[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
     imshow("Resultado",this->frame_final);
 }
