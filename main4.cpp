@@ -28,8 +28,9 @@ int main(int argc, char *argv[]){
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
         cam.SegAndCluster(cam.skeleton,30);
-        
-        cam.estimated_lines();
+        cam.verifingClusters(cam.pline);
+        cam.MMQ();
+        cam.expanding_lines_c(cam.mmq);
         cam.drawLines();
         
         char c = (char)waitKey(0);
