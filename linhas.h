@@ -281,7 +281,7 @@ void Camera::SegAndCluster(Mat image, int d){
 
                     if((f == true) && (flag == true)){
                         clusters.push_back(dot);
-                        cout << "Numero de pontos na classe: " << dot.size() << endl;
+                        //cout << "Numero de pontos na classe: " << dot.size() << endl;
                         dot.clear();
                         dot.push_back(aux);
                         pb++;
@@ -299,8 +299,8 @@ void Camera::SegAndCluster(Mat image, int d){
         }    
 	}
     clusters.push_back(dot);
-    cout << "Numero de pontos na classe: " << dot.size() << endl;
-    cout << "Total de pixels brnacos: " << pb << endl; 
+    //cout << "Numero de pontos na classe: " << dot.size() << endl;
+    //cout << "Total de pixels brnacos: " << pb << endl; 
     dot.clear();
     this-> pb = pb;
     this->pline = clusters;
@@ -411,7 +411,7 @@ vector<pair<double,double > > coefs2(vector<vector<Vec4d> > &vv){
 			if((l[2] - l[0])!=0){
 				a = (l[3] - l[1])/(l[2] - l[0]);
 				b = (l[1] - a*l[0]);
-				cout << "coef ang:  " << a << "  coef lin:  " << b << endl;
+				//cout << "coef ang:  " << a << "  coef lin:  " << b << endl;
 				coef_temp.push_back(make_pair(a,b));
 			}
 		}
@@ -562,8 +562,8 @@ void Camera::ordinating(Mat image){
 		if((this->points[i].x > (this->width)*0.2) && (this->points[i].x < (this->width)*0.8)){
         if((this->points[i].x<=(this->points[i-1].x + (range*theta)))&&(this->points[i].x>=(points[i-1].x - (range*theta)))){ 
 			pline[(pline.size()-1)].push_back(this->points[i]);
-			cout << ((points[i].x)-(points[i-1].x)) << endl;
-			cout << "...adicionando no if..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
+			//cout << ((points[i].x)-(points[i-1].x)) << endl;
+			//cout << "...adicionando no if..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
 			clss ++;
 			}
 		else{
@@ -571,10 +571,10 @@ void Camera::ordinating(Mat image){
 			pline.push_back(temp);
 			
 			pline[(pline.size()-1)].push_back(this->points[i]);
-			cout << ((points[i].x)-(points[i-1].x)) << endl;
-			cout << "...adicionando no else..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
+			//cout << ((points[i].x)-(points[i-1].x)) << endl;
+			//cout << "...adicionando no else..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
 			this->size_classes.push_back(clss);
-			cout << clss << endl;
+			//cout << clss << endl;
             clss = 1;
 		}
         }
@@ -582,7 +582,7 @@ void Camera::ordinating(Mat image){
     
 	this->size_classes.push_back(clss);
     this->pline = pline;
-	cout << "Quantidade de classes" << this->pline.size() << endl;
+	//cout << "Quantidade de classes" << this->pline.size() << endl;
 }
 
 void Camera::hough(Mat image){
@@ -669,10 +669,10 @@ void Camera::miniROIs(Mat image){
 void Camera::ROIsOfClusters(Mat image){
     this->clusters.clear();
     int xinit;
-    cout << this->pline.size() << endl;
+    //cout << this->pline.size() << endl;
     for(int i = 0; i < this->pline.size(); i++){
         if((pline[i].size()) > 30){
-            cout << i << endl;
+            //cout << i << endl;
             xinit = (int)pline[i][0].x;
             Rect ROI = Rect(xinit, 0,((pline[i][(pline[i].size() - 1)].x) - pline[i][0].x), image.rows);
             Mat image_roi = image(ROI);
@@ -933,7 +933,7 @@ void Camera::MMQ(){
         }
         aux[0] = ((xy - ((sy*sx)/n))/(xx - ((sx*sx)/n))); //Coef Ang;
         aux[1] = ((sy - (aux[0]*sx))/n); //Coef lin
-        cout << aux << endl;
+        //cout << aux << endl;
         this->mmq.push_back(aux);
     }
 }
@@ -941,9 +941,9 @@ void Camera::MMQ(){
 void Camera::MMQ(int np_min){
     
     this->mmq.clear();
-    cout <<pline.size() << endl;
+    //cout <<pline.size() << endl;
     for(int i = 0; i < this->pline.size(); i++){
-        cout << this->pline[i].size() << endl;
+        //cout << this->pline[i].size() << endl;
         if(this->pline[i].size() > np_min){
             Vec2f aux;
             float sx = 0, sy = 0, xx = 0, xy = 0, n = pline[i].size();
@@ -965,7 +965,7 @@ void Camera::MMQ(int np_min){
             }*/
         }
     }
-    cout << "Quantidade de linhas: " << mmq.size() << endl;
+    //cout << "Quantidade de linhas: " << mmq.size() << endl;
 }
 
 void Camera::R(){
@@ -977,7 +977,7 @@ void Camera::R(){
             sum += (this->pline[i][j].x - xp)*(this->pline[i][j].x - xp);
         }
         int result = sqrt(sum);
-        cout << "R  " << result << endl;
+        //cout << "R  " << result << endl;
         if(result < thrs){
             this->final_coef.push_back(mmq[i]);
         }
@@ -1128,26 +1128,26 @@ void Camera::estimated_lines(){
 }
 
 void Camera::drawLines(){
-    cout << "Quantidade de linhas  " << this->lines.size() << endl;
+    //cout << "Quantidade de linhas  " << this->lines.size() << endl;
     for(int i = 0; i < this->lines.size(); i++){
 		line(this->frame_final, Point(this->lines[i][0], (this->lines[i][1] + (this->height - (this->height/this->region)))), Point(this->lines[i][2], (this->lines[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
-    imshow("Resultado",this->frame_final);
+    //imshow("Resultado",this->frame_final);
 }
 
 void Camera::drawLines_a(){
-    cout << "Quantidade de linhas  " << this->lines_a.size() << endl;
+    //cout << "Quantidade de linhas  " << this->lines_a.size() << endl;
     for(int i = 0; i < this->lines_a.size(); i++){
 		line(this->frame_final, Point(this->lines_a[i][0], (this->lines_a[i][1] + (this->height - (this->height/this->region)))), Point(this->lines_a[i][2], (this->lines_a[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
-    imshow("Resultado",this->frame_final);
+    //imshow("Resultado",this->frame_final);
 }
 
 void Camera::drawLines_c(){
-    cout << "Quantidade de linhas  " << this->flinesC.size() << endl;
+    //cout << "Quantidade de linhas  " << this->flinesC.size() << endl;
 
     for(int i = 0; i < this->flinesC.size(); i++){
 		line(this->frame_final, Point(this->flinesC[i][0], (this->flinesC[i][1] + (this->height - (this->height/this->region)))), Point(this->flinesC[i][2], (this->flinesC[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
-    imshow("Resultado",this->frame_final);
+    //imshow("Resultado",this->frame_final);
 }
