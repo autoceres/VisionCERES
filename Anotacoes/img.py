@@ -37,17 +37,25 @@ def cleaningVar():
 	
 def main():
 	#Comeca a iteração do diretorio
-	cont = 0
+	backup = open("backup.txt", 'r')
+	cont = int(backup.read())
+	backup.close()
 	path = glob.glob("Dataset/*.jpg")
-	for i in range(0,len(path)): 
+	for i in range(cont,len(path)): 
 		print(path[i])
+		print(i)
 		img = cv.imread(path[i])#nesse espaço tem que ter o nome da variavel da imagem 
 		if (img.shape[0] == 2340) and (img.shape[1] == 4160):
 			resized = cv.resize(img, (int(img.shape[1]/5), int(img.shape[0]/5)))
 		else:
 			resized = cv.resize(img, (int(832), int(468)))
 		
+		backup = open("backup.txt", 'w')
+		backup.write("%d" % cont)
+		backup.close()
 		cont += 1
+		
+
 		path_img = "imagens/" + str(cont) + ".jpg"
 		path_arq = "arquivos/" + str(cont) + ".txt"
 		path_imgo = "original/" + str(cont) + ".jpg"
