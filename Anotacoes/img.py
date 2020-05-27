@@ -40,11 +40,12 @@ def main():
 	backup = open("backup.txt", 'r')
 	cont = int(backup.read())
 	backup.close()
-	path = glob.glob("Dataset/*.jpg")
-	for i in range(cont,len(path)): 
-		print(path[i])
+	path = glob.glob("Dataset/*.jpg") 
+	print(len(path))
+	for i in range(cont,len(path)+1): 
 		print(i)
-		img = cv.imread(path[i])#nesse espaço tem que ter o nome da variavel da imagem 
+		p = "Dataset/" + str(i) + ".jpg"
+		img = cv.imread(p)#nesse espaço tem que ter o nome da variavel da imagem 
 		if (img.shape[0] == 2340) and (img.shape[1] == 4160):
 			resized = cv.resize(img, (int(img.shape[1]/5), int(img.shape[0]/5)))
 		else:
@@ -53,12 +54,12 @@ def main():
 		backup = open("backup.txt", 'w')
 		backup.write("%d" % cont)
 		backup.close()
-		cont += 1
-		
 
 		path_img = "imagens/" + str(cont) + ".jpg"
 		path_arq = "arquivos/" + str(cont) + ".txt"
 		path_imgo = "original/" + str(cont) + ".jpg"
+		
+		cont += 1
 
 		cv.imwrite(path_imgo, resized)
 
@@ -96,8 +97,8 @@ def main():
 		arquivo.close()
 		cleaningVar()
 
-
-	cv.destroyWindow()
+	print("Terminou!!!")
+	cv.destroyAllWindows()
 
 if __name__ == '__main__':
 	main()
