@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
     cam.expanding_lines(cam.mmq);
     cam.drawLines();
     name_arq += argv[1];
-    name_arq += "_metodo4";
+    name_arq += "_metodo3";
     name += path;
     name += argv[1];
     name += pref;

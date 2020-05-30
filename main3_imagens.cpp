@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
     cam.estimated_lines();
     cam.drawLines();
     name_arq += argv[1];
-    name_arq += "_metodo3";
+    name_arq += "_metodo4";
     name += path;
     name += argv[1];
     name += pref;

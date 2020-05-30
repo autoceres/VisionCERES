@@ -1,6 +1,0 @@
-Linha: 1 - xi: 489 yi: 0 xf: 489 yf: 585 coeficiente angular: inf coeficiente linear: -inf
-Linha: 2 - xi: 1424 yi: 0 xf: 1424 yf: 585 coeficiente angular: inf coeficiente linear: -inf
-Linha: 3 - xi: 2014 yi: 0 xf: 2014 yf: 585 coeficiente angular: inf coeficiente linear: -inf
-Linha: 4 - xi: 2472 yi: 0 xf: 2472 yf: 585 coeficiente angular: inf coeficiente linear: -inf
-Linha: 5 - xi: 3300.5 yi: 0 xf: 3300.5 yf: 585 coeficiente angular: inf coeficiente linear: -inf
-Linha: 6 - xi: 4078.5 yi: 0 xf: 4078.5 yf: 585 coeficiente angular: inf coeficiente linear: -inf

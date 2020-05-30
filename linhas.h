@@ -308,37 +308,39 @@ void Camera::SegAndCluster(Mat image, int d){
 }
 
 void Camera::verifingClusters(vector<vector<Point2f> > line){
-    //bool check = true;
-    //while(check){
-    vector<vector<Point2f> > l;    
-    vector<Point2f> split1;
-    vector<Point2f> split2;
+    bool check = true;
+    while(check){
+        check = false;
+        vector<vector<Point2f> > l;    
+        vector<Point2f> split1;
+        vector<Point2f> split2;
 
-    l.clear();
-    split1.clear();
-    split2.clear();
+        l.clear();
+        split1.clear();
+        split2.clear();
 
-        for(int i = 0; i < line.size(); i++){
-            if(line[i].size()!=0){
-                if(line[i].size() > (this->pb)*0.6){
-                    for(int j = 0; j < line[i].size(); j++){
-                        if(j > (line[i].size())/2){
-                            split1.push_back(line[i][j]);
+            for(int i = 0; i < this->pline.size(); i++){
+                if(this->pline[i].size()!=0){
+                    if(this->pline[i].size() > (this->pb)*0.6){
+                        check = true;
+                        for(int j = 0; j < this->pline[i].size(); j++){
+                            if(j > (this->pline[i].size())/2){
+                                split1.push_back(this->pline[i][j]);
+                            }
+                            else{
+                                split2.push_back(this->pline[i][j]);
+                            }
                         }
-                        else{
-                            split2.push_back(line[i][j]);
-                        }
+                        l.push_back(split1);
+                        l.push_back(split2);
                     }
-                    l.push_back(split1);
-                    l.push_back(split2);
-                }
-                else{
-                    l.push_back(line[i]);
+                    else{
+                        l.push_back(this->pline[i]);
+                    }
                 }
             }
-        }
-    //}
-    this->pline = l;
+        this->pline = l;
+    }
 }
 
 void Camera::morphologicalOperations(Mat image){
@@ -678,6 +680,8 @@ void Camera::ROIsOfClusters(Mat image){
             Mat image_roi = image(ROI);
             Mat aux;
             image_roi.copyTo(aux);
+            //imshow("ROI", aux);
+            waitKey(0);
             this->clusters.push_back(aux);
         }
     }    
@@ -923,6 +927,7 @@ void Camera::MMQ(){
     this->mmq.clear();
     
     for(int i = 0; i < this->pline.size(); i++){
+        //cout << pline[i] << endl;
         Vec2f aux;
         float sx = 0, sy = 0, xx = 0, xy = 0, n = pline[i].size();
         for(int j = 0; j < this->pline[i].size(); j++){
@@ -931,9 +936,9 @@ void Camera::MMQ(){
             xx += (this->pline[i][j].x)*(this->pline[i][j].x);
             xy += (this->pline[i][j].x)*(this->pline[i][j].y);
         }
-        aux[0] = ((xy - ((sy*sx)/n))/(xx - ((sx*sx)/n))); //Coef Ang;
+        aux[0] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
         aux[1] = ((sy - (aux[0]*sx))/n); //Coef lin
-        //cout << aux << endl;
+        cout << aux << endl;
         this->mmq.push_back(aux);
     }
 }
@@ -954,9 +959,9 @@ void Camera::MMQ(int np_min){
                 xy += (this->pline[i][j].x)*(this->pline[i][j].y);
             }
 
-            aux[0] = ((xy - ((sy*sx)/n))/(xx - ((sx*sx)/n))); //Coef Ang;
+            aux[0] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
             aux[1] = ((sy - (aux[0]*sx))/n); //Coef lin
-            
+        
             this->mmq.push_back(aux);
             
             /*if(abs(aux[0]) < 50){
@@ -1100,7 +1105,7 @@ void Camera::expanding_lines_c(vector<Point2f> coef_retas){
                 x_ord_trans[2] = x_ord_trans[0];
                 x_ord_trans[3] = this->frame_roi.rows;
                 lines.push_back(x_ord_trans);
-            }    
+            }  
         }
     }
 	this->lines  = lines;
