@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
     cam.img_fn += cam.img_ext;
     cam.frame = imread(cam.img_fn, IMREAD_COLOR);
     cam.gettingSize(cam.frame.cols,cam.frame.rows);
-   
+    
     cam.frame.copyTo(cam.frame_final);
    
     cam.creatingRoi(cam.frame);
@@ -23,6 +23,7 @@ int main(int argc, char *argv[]){
     cam.morphologicalOperations(cam.segmented);
     cam.SegAndCluster(cam.skeleton,30);
     cam.verifingClusters(cam.pline);
+    cam.ROIsOfClusters(cam.skeleton);
     cam.MMQ();
     cam.expanding_lines_c(cam.mmq);
     cam.drawLines();
