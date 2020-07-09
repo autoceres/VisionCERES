@@ -20,11 +20,18 @@ int main(int argc, char *argv[]){
    
     cam.creatingRoi(cam.frame);
     cam.Segmentation(cam.frame_roi);
+
+    cam.erodeConfig(1, 11);
+    cam.dilateConfig(3, 3);
+    cam.skeletonConfig(3, 3);
+
     cam.morphologicalOperations(cam.segmented);
+    //imshow("Dilation", cam.dilation);
+    //cam.prevision(cam.binarized);
     cam.findingCenters(cam.morph);
     cam.ordinating(cam.morph);
-    cam.MMQ(cam.np_min);
-    //cam.R();
+    cam.MMQ(7);
+    //cam.R2();
     cam.expanding_lines(cam.mmq);
     cam.drawLines();
     name_arq += argv[1];
@@ -32,9 +39,11 @@ int main(int argc, char *argv[]){
     name += path;
     name += argv[1];
     name += pref;
+    //imshow("Final", cam.frame_final);
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     cam.cap.release();
+    waitKey(0);
     destroyAllWindows();
 
 	return 0;
