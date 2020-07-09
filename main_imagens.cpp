@@ -21,22 +21,34 @@ int main(int argc, char *argv[]){
    
     cam.creatingRoi(cam.frame);
     cam.Segmentation(cam.frame_roi);
+
+    cam.erodeConfig(1, 11);
+    cam.dilateConfig(3, 3);
+    cam.skeletonConfig(3, 3);
+    
     cam.morphologicalOperations(cam.segmented);
-    cam.hough(cam.skeleton);
+    cam.hough(cam.skeleton, 30);
     cam.miniROIs(cam.skeleton);
     cam.dynamicROI(cam.skeleton);
     cam.MMQ();
     cam.R();
     cam.expanding_lines(cam.final_coef);
+
+    sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
+
+    cam.retas_med(cam.lines_a);
+    cam.expanding_lines_a(cam.coef_med_retas);
     cam.drawLines();
     name_arq += argv[1];
     name_arq += "_metodo2"; 
     name += path;
     name += argv[1];
     name += pref;
+    //imshow("Final", cam.frame_final);
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     cam.cap.release();
+    //waitKey(0);
     destroyAllWindows();
 
 	return 0;

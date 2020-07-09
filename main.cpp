@@ -13,6 +13,9 @@ int main(int argc, char *argv[]){
     cam.namingVideo(argv[1]);
     cam.gettingSize(cam.cap.get(CAP_PROP_FRAME_WIDTH),cam.cap.get(CAP_PROP_FRAME_HEIGHT));
     
+    cam.p.open(cam.processed, CV_FOURCC('M','J','P','G'), 20, Size(cam.width,cam.height));
+    cam.c.open(cam.original, CV_FOURCC('M','J','P','G'), 20, Size(cam.width,cam.height));
+    
     while (1){
         cam.cap >> cam.frame;
 
@@ -26,23 +29,34 @@ int main(int argc, char *argv[]){
         imshow("Crop",cam.frame_roi);
         cam.Segmentation(cam.frame_roi);
         imshow("Segmentation",cam.segmented);
+
+        cam.erodeConfig(1, 11);
+        cam.dilateConfig(3, 3);
+        cam.skeletonConfig(3, 3);
+        
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
-        cam.hough(cam.skeleton);
+        cam.hough(cam.skeleton, 10);
         cam.miniROIs(cam.skeleton);
         cam.dynamicROI(cam.skeleton);
         cam.MMQ();
         cam.R();
         cam.expanding_lines(cam.final_coef);
         cam.drawLines();
+        imshow("Resultado",cam.frame_final);
         
+        cam.p.write(cam.frame_final);
+        cam.c.write(cam.frame);
         char c = (char)waitKey(100);
 			if( c == 27 ){
 				break;
-			}	
+			}
+        	
     }
     
     cam.cap.release();
+    cam.p.release();
+    cam.c.release();
     destroyAllWindows();
 
 	return 0;

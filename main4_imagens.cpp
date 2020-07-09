@@ -33,9 +33,11 @@ int main(int argc, char *argv[]){
     name += path;
     name += argv[1];
     name += pref;
+    //imshow("Final", cam.frame_final);
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     cam.cap.release();
+    waitKey(0);
     destroyAllWindows();
 
 	return 0;
