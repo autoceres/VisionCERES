@@ -199,7 +199,7 @@ void Camera::writingFile(string name){
         if(this->lines[i][2] - this->lines[i][0]){
             double ang = (this->lines[i][3] - this->lines[i][1])/(this->lines[i][2] - this->lines[i][0]);
             double lin = this->lines[i][1] - (ang)*(this->lines[i][0]);
-            this->arquivo << " " << this->lines[i][0]
+            this->arquivo << this->lines[i][0]
             << " " << this->lines[i][1]
             << " " << this->lines[i][2]
             << " " << this->lines[i][3]
