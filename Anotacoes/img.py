@@ -45,7 +45,7 @@ def main():
 	for i in range(cont,len(path)+1): 
 		print(i)
 		p = "Dataset/" + str(i) + ".jpg"
-		img = cv.imread(p)#nesse espaço tem que ter o nome da variavel da imagem 
+		img = cv.imread(p)
 		if (img.shape[0] == 2340) and (img.shape[1] == 4160):
 			resized = cv.resize(img, (int(img.shape[1]/5), int(img.shape[0]/5)))
 		else:
@@ -67,29 +67,28 @@ def main():
 		cv.imshow(windowName, resized)
 		
 		if cv.waitKey(0) == ord('s'):
+			print("Saindo...")
 			break 
 		
 		img_retas = draw_lines(resized)
 		cv.imshow("Retas", img_retas)
-		cv.imwrite(path_img, img_retas) #Colocar no primeiro parametro o caminho para salvar a imagem 
-								#e o repectivo nome
+		cv.imwrite(path_img, img_retas)  
 		calc_coefs()
 			
 		#Criar arquivo TXT
 		arquivo = open(path_arq, 'w+')
 		for i in range(0,len(Lista_init)):
 			texto = arquivo.readlines()
-			texto.append('xi: ')
 			texto.append(str(Lista_init[i][0]))
-			texto.append(' yi: ')
+			texto.append(' ')
 			texto.append(str(Lista_init[i][1]))
-			texto.append(' xf: ')
+			texto.append(' ')
 			texto.append(str(Lista_final[i][0]))
-			texto.append(' yf: ')
+			texto.append(' ')
 			texto.append(str(Lista_final[i][1]))
-			texto.append(' coeficiente Angular: ')
+			texto.append(' ')
 			texto.append(str(Lista_coef[i][0]))
-			texto.append(' coeficiente Linear: ')
+			texto.append(' ')
 			texto.append(str(Lista_coef[i][1]))
 			texto.append("\n")
 			arquivo.writelines(texto)
@@ -97,7 +96,7 @@ def main():
 		arquivo.close()
 		cleaningVar()
 
-	print("Terminou!!!")
+	print("Done!")
 	cv.destroyAllWindows()
 
 if __name__ == '__main__':
