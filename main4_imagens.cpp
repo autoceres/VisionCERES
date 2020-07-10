@@ -6,7 +6,7 @@
 #include "linhas.h"
 
 int main(int argc, char *argv[]){
-    string pref = "_metedo5_saida.jpg";
+    string pref = "_metodo5_saida.jpg";
     string path = "imagens/";
     string name;
     string name_arq;
@@ -20,6 +20,11 @@ int main(int argc, char *argv[]){
    
     cam.creatingRoi(cam.frame);
     cam.Segmentation(cam.frame_roi);
+
+    cam.erodeConfig(1, 11);
+    cam.dilateConfig(3, 3);
+    cam.skeletonConfig(3, 3);
+
     cam.morphologicalOperations(cam.segmented);
     cam.SegAndCluster(cam.skeleton,30);
     cam.verifingClusters(cam.pline);
@@ -37,7 +42,7 @@ int main(int argc, char *argv[]){
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     cam.cap.release();
-    waitKey(0);
+    //waitKey(0);
     destroyAllWindows();
 
 	return 0;

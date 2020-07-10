@@ -7,7 +7,7 @@
 #include "linhas.h"
 
 int main(int argc, char *argv[]){
-    string pref = "_metedo2_saida.jpg";
+    string pref = "_metodo2_saida.jpg";
     string path = "imagens/";
     string name;
     string name_arq;
