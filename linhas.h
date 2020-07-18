@@ -39,7 +39,7 @@ class Camera{
 
     int pb;
     
-    string img_ext = ".jpg";
+    string img_ext = ".png";
     string img_fn;
 
     VideoCapture cap;
@@ -72,6 +72,7 @@ class Camera{
 
     string original;
     string processed;
+    string name;
 
     vector<Point2f> points;
     vector<Point2f> points2;
@@ -108,6 +109,7 @@ class Camera{
     vector<pair<double,double> > coef_med_retas; //Vetor de coeficientes médios, método antigo
     
     ofstream arquivo;
+    ofstream datalog;
     //Aqui você coloca os métodos
     Camera(int id_cam, int region);
 
@@ -121,6 +123,7 @@ class Camera{
     void erodeConfig(int m, int n);
     void dilateConfig(int m, int n);
     void skeletonConfig(int m, int n);
+    void morphOp(Mat image);
     void morphologicalOperations(Mat image);
     void Otsu_first(Mat image, double min, double max);
     void Otsu_second(Mat image, double min, double max);
@@ -130,7 +133,7 @@ class Camera{
     void coefs1(vector<Vec4d> &vv); //Calcula os coeficientes das retas do HoughP
     void retas_med(vector<Vec4d> &pontos); //Calcula as retas médias no método antigo
     void findingCenters(Mat image); //Acha o centroide da imagem
-    void ordinating(Mat image); 
+    void ordinating(Mat image, double range); 
     void hough(Mat image, int threshold);
     void houghP(Mat image, int nc, double lineLength, double maxGap);
     void miniROIs(Mat image);
@@ -145,15 +148,16 @@ class Camera{
     void estimated_lines();
     
 
-    void expanding_lines(vector<Point2f> coef_retas);
-    void expanding_lines_a(vector<pair<double,double>> coef_retas);
-    void expanding_lines_c(vector<Point2f> coef_retas);
+    void expanding_lines(vector<Point2f> coef_retas, double p, double n);
+    void expanding_lines_a(vector<pair<double,double>> coef_retas, double p, double n);
+    void expanding_lines_c(vector<Point2f> coef_retas, double p, double n);
     void drawLines();
     void drawLines_a();
     void drawLines_c();
     void centroids(Mat image);
     
     void writingFile(string name);
+    void dataLog(string name);
     
     int medianMatrix(Mat image);
 
@@ -168,6 +172,8 @@ Camera::Camera(int id_cam, int region){
 void Camera::gettingSize(int width, int height){
     this->width = width;
     this->height = height;
+    this->datalog << "gettingSize" << endl;
+    this->datalog << "Width: " << width << " Height: " << height << endl;
 }
 
 void Camera::namingVideo(string name){
@@ -184,13 +190,13 @@ void Camera::namingVideo(string name){
 }
 
 void Camera::writingFile(string name){
-    string path = "arquivos/";
+    string path = "Arquivos/";
     string extention = ".txt";
     name += extention;
     path += name;
     this->arquivo.open(path, ios::out);
     if(!this->arquivo){
-        cout << "Could not open the file"  << endl;
+        cout << "Não conseguir abrir o arquivo final"  << endl;
         abort();
     }   
 
@@ -211,6 +217,20 @@ void Camera::writingFile(string name){
     this->arquivo.close();
 }
 
+void Camera::dataLog(string name){
+    string path = "DataLog/";
+    string extension = ".txt";
+    name += extension;
+    path += name;
+
+    this->datalog.open(path, ios::out);
+
+    if(!this->datalog){
+        cout << "Falha ao iniciar o DataLog"  << endl;
+        abort();
+    }
+}
+
 void Camera::creatingRoi(Mat image){
     int xinit = 0;  
 	int yinit = ((this->height) - (this->height/this->region));
@@ -218,18 +238,35 @@ void Camera::creatingRoi(Mat image){
     Rect ROI = Rect(xinit, yinit,this->width,(this->height/this->region));
 	Mat image_roi = frame(ROI);
     image_roi.copyTo(this->frame_roi);
+    this->datalog << "creatingROI" << endl;
+    this->datalog << "ROI " << xinit << " " << yinit << " "
+    << this->width << " " << (this->height/this->region) << endl;
 }
 
 void Camera::Segmentation(Mat image){
     int i = 0;
     int j = 0;
-	//cout<<"Iniciando a busca"<<endl;
+    
+    ofstream arq;
+    string path = "Segmentation/";
+    string extention = ".txt";
+    this->name += extention;
+	path += this->name;
+    arq.open(path, ios::out);
+    if(!arq){
+        cout << "Falha ao abrir o DataLog da Segmentação"  << endl;
+        abort();
+    }
+    
+    //cout<<"Iniciando a busca"<<endl;
 	for(i = 0; i<image.cols; i++){						//imagem.size().width = imagem.cols -> dependendo de como a imagem está
 		for(j = 0; j<image.rows; j++){					//imagem.size().height = imagem.rows -> dependendo de como a imagem está
 			Vec3b color = image.at<Vec3b>(Point(i,j));
+            //cout << "i: " << i << " j: " << j << " color: " << color <<  endl;
 			//Condições para o pixel ser considerado verde funções 2.2 e 2.3 TCC do Felipe
 			if((((color[0] + color[2])*(this->k))<color[1]) && ((color[0] + color[2])>(this->t))){ 
-			//Muda o pixel para branco caso seja verde
+			arq << "i: " << i << " j: " << j << " color: " << color <<  endl;
+            //Muda o pixel para branco caso seja verde
 			color[0] = 255; 
 			color[1] = 255;
 			color[2] = 255;
@@ -244,6 +281,7 @@ void Camera::Segmentation(Mat image){
 		}
 	}
 	this->segmented = image;
+    arq.close();
 }
 
 void Camera::SegAndCluster(Mat image, int d){
@@ -263,22 +301,25 @@ void Camera::SegAndCluster(Mat image, int d){
     dot.clear();
     clusters.clear();
 	//cout<<"Iniciando a busca"<<endl;
+    this->datalog << "SegAndCluster" << endl;
+    this->datalog << "Distancia: " << dist << endl;
+    this->datalog << "Iniciando a busca" << endl;
     //cout << image << endl;
 	for(i = 0; i<image.cols; i++){						
 		for(j = (image.rows - 1); j >= 0; j--){
                 uchar color = image.at<uchar>(j,i);
                 //cout << "i: " << i << " j: " << j;
                 if((double)color == 255){
-                    /*
-                    cout << "i: " << i << " j: " << j;
-                    cout << " Valor do color: " << (double)color << endl;
-                    */
+                    
+                    this->datalog << "i: " << i << " j: " << j
+                    << " Valor do color: " << (double)color << endl;
+                    
                     if(flag == false){
                         position = i;
                         aux.x = i;
                         aux.y = j;
                         dot.push_back(aux);
-                        //cout << "Ponto encontrado! Quantidade de pontos: " << dot.size() << " i: " << i << " j: " << j << endl;
+                        this->datalog << "Ponto encontrado! Quantidade de pontos: " << dot.size() << " i: " << i << " j: " << j << endl;
                         f = true;
                         pb++;
                     }
@@ -291,30 +332,30 @@ void Camera::SegAndCluster(Mat image, int d){
 
                     if((f == true) && (flag == true)){
                         clusters.push_back(dot);
-                        //cout << "Numero de pontos na classe: " << dot.size() << endl;
+                        this->datalog << "Numero de pontos na classe: " << dot.size() << endl;
                         dot.clear();
                         dot.push_back(aux);
                         pb++;
-                        //cout << "Ponto encontrado! Quantidade de pontos: " << dot.size() << " i: " << i << " j: " << j << endl;
+                        this->datalog << "Ponto encontrado! Quantidade de pontos: " << dot.size() << " i: " << i << " j: " << j << endl;
                         position = i;
                         flag = false;
                     }
                     f = false;
                 }
                 //cout << "else " << endl;
-                //cout << "Ultimo branco:  " << position << " Ultimo preto: " << u << " i: " << i << endl;  
+                this->datalog << "Ultimo branco:  " << position << endl;  
         }
         if((i - position) >= dist){
             flag = true;
         }    
 	}
     clusters.push_back(dot);
-    //cout << "Numero de pontos na classe: " << dot.size() << endl;
-    //cout << "Total de pixels brnacos: " << pb << endl; 
+    this->datalog << "Numero de pontos na classe: " << dot.size() << endl;
+    this->datalog << "Total de pixels brnacos: " << pb << endl; 
     dot.clear();
     this-> pb = pb;
     this->pline = clusters;
-    //cout << "Fim" << endl;
+    this->datalog << "Fim" << endl;
 }
 
 void Camera::verifingClusters(vector<vector<Point2f> > line){
@@ -355,14 +396,29 @@ void Camera::verifingClusters(vector<vector<Point2f> > line){
 
 void Camera::erodeConfig(int m, int n){
     this->element1 = getStructuringElement(MORPH_RECT,Size(m,n));
+    this->datalog << "ErodeConfig: " << endl;
+    this->datalog << "m: " << m << " n: " << n << endl;
 }
 
 void Camera::dilateConfig(int m, int n){
     this->element2 = getStructuringElement(MORPH_RECT,Size(m,n));
+    this->datalog << "DilateConfig: " << endl;
+    this->datalog << "m: " << m << " n: " << n << endl;
 }
 
 void Camera::skeletonConfig(int m, int n){
     this->element3 = getStructuringElement(MORPH_CROSS,Size(m,n));
+    this->datalog << "SkeletonConfig: " << endl;
+    this->datalog << "m: " << m << " n: " << n << endl;
+}
+
+void Camera::morphOp(Mat image){
+    //Opening
+    erode(this->segmented,this->erosion,this->element1);
+    dilate(this->erosion,this->dilation,this->element2);
+    //Image Processing
+    cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
+    binarized.copyTo(this->morph);
 }
 
 void Camera::morphologicalOperations(Mat image){
@@ -424,12 +480,13 @@ void Camera::coefs1(vector<Vec4d> &vv){
 	double a = 0;
 	double b = 0;	
 	for(size_t i = 0; i<vv.size(); i++){
-		    //cout << "xi =  " << vv[i][0] << "   xf =  "  << vv[i][2] << endl;
+		    this->datalog << "Coefs1" << endl;
+            this->datalog <<"xi =  " << vv[i][0] << "   xf =  "  << vv[i][2] << endl;
 			Vec4f l = vv[i];
 			if(l[2] - l[0]){
 				a = (l[3] - l[1])/(l[2] - l[0]);
 				b = (l[1] - a*l[0]);
-				//cout << "coef ang:  " << a << "  coef lin:  " << b << endl;
+				this->datalog << "coef ang:  " << a << "  coef lin:  " << b << endl;
 				coef_temp.push_back(make_pair(a,b));
 			}
 		}
@@ -472,8 +529,9 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 	trans[2] = 0;
 	trans[3] = 0;
 
+    this->datalog << "Retas Med" << endl;
 	for(size_t i = 0;i<pontos.size();i++){
-	//cout << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
+	this->datalog << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
 		if(((pontos[i+1][2] - pontos[i][2])>-50)&&((pontos[i+1][2] - pontos[i][2])<50)){
 			trans[0] += pontos[i][0];
 			trans[1] += pontos[i][1];
@@ -484,7 +542,7 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 		else{
 			Vec4d med;
 			vector<Vec4d> classes;
-			//cout << "xi =  " << trans[0] << "  yi =  " << trans[1] << "  xf =  "  << trans[2] << " yf = " << trans[3] << endl;
+			this->datalog << "xi =  " << trans[0] << "  yi =  " << trans[1] << "  xf =  "  << trans[2] << " yf = " << trans[3] << endl;
 			trans[0] += pontos[i][0];
 			trans[1] += pontos[i][1];
 			trans[2] += pontos[i][2];
@@ -494,7 +552,7 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 			med[1] = (trans[1]/j);
 			med[2] = (trans[2]/j);
 			med[3] = (trans[3]/j);
-			//cout << "xi_med =  " << med[0] << "  yi_med =  " << med[1] << "  xf_med =  "  << med[2] << " yf_med = " << med[3] << endl;
+			this->datalog << "xi_med =  " << med[0] << "  yi_med =  " << med[1] << "  xf_med =  "  << med[2] << " yf_med = " << med[3] << endl;
 			classes.push_back(med);
 			classes_total.push_back(classes);
 			trans[0] = 0;
@@ -504,12 +562,13 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 			j = 0;
 		}
 	}
-	//cout << "Tamanho:  " << classes_total.size() << endl;
+	this->datalog << "Tamanho:  " << classes_total.size() << endl;
 	ans = coefs2(classes_total);
 	this->coef_med_retas = ans;
 }
 
 void Camera::findingCenters(Mat image){
+    this->datalog << "Finding Centers" << endl;
 	this->point = Mat::zeros(Size(image.cols,image.rows),CV_8UC3);
     
     int i = 0;
@@ -532,7 +591,8 @@ void Camera::findingCenters(Mat image){
 	for( size_t i = 0; i < contours.size(); i++ ){ 
 		if(mu[i].m00 != 0){
             mc[i] = Point2f(static_cast<float>(mu[i].m10/mu[i].m00),static_cast<float>(mu[i].m01/mu[i].m00)); 
-		//cout << mc[i].y << endl;
+		this->datalog << "Moments" << endl;
+        this->datalog << mc[i] << endl;
         }
 	}
 
@@ -545,18 +605,18 @@ void Camera::findingCenters(Mat image){
 	
 	sort(mc.begin(),mc.end(),cmpVec2x);
 	
-	//cout << "Quantidade de Centroides   " << mc.size() << endl;
+	this->datalog << "Quantidade de Centroides   " << mc.size() << endl;
 	
 	while(i<mc.size()){
 		if(((mc[i+1].x - mc[i].x)<(1))&&((mc[i+1].y - mc[i].y)<(1))){
 			this->points.push_back(mc[i]);
-			//cout << pontos[j].x << "      " << pontos[j].y << endl;
+			this->datalog << "if: " << points[j].x << "      " << points[j].y << endl;
 			i = i + 2;
 			j++;
 			}
 		else{
 			this->points.push_back(mc[i]);
-			//cout << pontos[j].x << "      " << pontos[j].y << endl;
+			this->datalog << "else: " << points[j].x << "      " << points[j].y << endl;
 			i++;
 			j++;
 		}
@@ -565,16 +625,17 @@ void Camera::findingCenters(Mat image){
 	image.copyTo(this->point);
 	for( size_t i = 0; i<j; i++ ){
 		Scalar color = Scalar( 255, 0, 0);
-        //cout << this->points[i] << endl;
+        this->datalog << this->points[i] << endl;
 		circle(this->point, this->points[i], 4, color, -1, 8, 0 );
 	}
 	//imshow("Centroides filtrados", this->point);
-	//cout << "Quantidade de Centroides Filtrados  " << points.size() << endl;
+	this->datalog << "Quantidade de Centroides Filtrados  " << points.size() << endl;
 }
 
-void Camera::ordinating(Mat image){
-	int clss = 1;
-	double range = 20;
+void Camera::ordinating(Mat image, double range){
+	this->datalog << "Ordinating" << endl;
+    
+    int clss = 1;
 	double theta = 1;
 	vector<vector<Point2f> > pline;
     
@@ -586,21 +647,21 @@ void Camera::ordinating(Mat image){
 	pline.push_back(inicializacao);
 
 	pline[0].push_back(this->points[0]);
-	//cout << "...adicionando..." << pontos[0] << "...na classe..." << (classes.size()-1) << endl;
+	this->datalog << "...adicionando..." << points[0] << "...na classe..." << (pline.size()-1) << endl;
 	//cout << "Quantidade de Centroides Filtrados  " << pontos.size() << endl;
-	
+	/*
 	if((this->points.size()>50)){
-			range = 25;
+			range = 15;
 			this->np_min = 3;
 			//cout << "Definindo range para...   " << range << endl;
 		}
-	
+	*/
 	for(int i = 1; i<this->points.size(); i++){
 		if(!(((this->points[i].x < (this->width)*0.02) && (this->points[i].y < (this->height/this->region)*0.35)) || ((this->points[i].x > (this->width)*0.98) && (this->points[i].y < (this->height/this->region)*0.35)))){
-            if((this->points[i].x<=(this->points[i-1].x + (range*theta)))&&(this->points[i].x>=(points[i-1].x - (range*theta))) && (abs(this->points[i].y - (points[i-1].y)) < (this->height/this->region)*0.65)){ 
+            if((this->points[i].x<=(this->points[i-1].x + (range*theta)))){ //&& (abs(this->points[i].y - (points[i-1].y)) < (this->height/this->region)*0.65)){ 
                 pline[(pline.size()-1)].push_back(this->points[i]);
-                //cout << ((points[i].x)-(points[i-1].x)) << endl;
-                //cout << "...adicionando no if..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
+                this->datalog << ((points[i].x)-(points[i-1].x)) << endl;
+                this->datalog << "...adicionando no if..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
                 clss ++;
                 }
             else{
@@ -609,9 +670,9 @@ void Camera::ordinating(Mat image){
                 
                 pline[(pline.size()-1)].push_back(this->points[i]);
                 //cout << abs(((points[i].y)-(points[i-1].y))) << " " << (this->height/this->region)*0.65 << endl;
-                //cout << "...adicionando no else..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
+                this->datalog << "...adicionando no else..." << points[i] << "...na classe..." << (pline.size()-1) << endl;
                 this->size_classes.push_back(clss);
-                //cout << clss << endl;
+                this->datalog << clss << endl;
                 clss = 1;
             }
         }
@@ -619,10 +680,11 @@ void Camera::ordinating(Mat image){
     
 	this->size_classes.push_back(clss);
     this->pline = pline;
-	//cout << "Quantidade de classes" << this->pline.size() << endl;
+	this->datalog << "Quantidade de classes" << this->pline.size() << endl;
 }
 
 void Camera::hough(Mat image, int threshold){
+    this->datalog << "Hough" << endl;
     vector<Vec2f> lines;
     int count = 0;
     
@@ -635,8 +697,8 @@ void Camera::hough(Mat image, int threshold){
     this->points2.clear();
     this->points3.clear();
     this->points4.clear();
-
-    HoughLines(this->skeleton, lines, 1, CV_PI/180, threshold, 0, 0);
+    this->datalog << "Threshold: " << threshold << endl;
+    HoughLines(image, lines, 1, CV_PI/180, threshold, 0, 0);
  
     for(int i = 0; i < lines.size(); i++){
         Vec2f auxc;
@@ -652,16 +714,16 @@ void Camera::hough(Mat image, int threshold){
                 this->coefs.push_back(auxc);  
                 auxp1[1] = this->frame_roi.rows;//y
                 auxp1[0] = ((this->frame_roi.rows) - auxc[1])/(auxc[0]); //x
-                //cout << "primeiro" << auxp1 << endl;
+                this->datalog << "primeiro" << auxp1 << endl;
                 auxp2[1] = this->frame_roi.rows - h;//y
                 auxp2[0] = ((this->frame_roi.rows - h) - auxc[1])/(auxc[0]); //x
-                //cout << "segundo" << auxp2 << endl;
+                this->datalog << "segundo" << auxp2 << endl;
                 auxp3[1] = this->frame_roi.rows - 2*h;//y
                 auxp3[0] = ((this->frame_roi.rows - 2*h) - auxc[1])/(auxc[0]); //x
-                //cout << "terceiro" << auxp3 << endl;
+                this->datalog << "terceiro" << auxp3 << endl;
                 auxp4[1] = this->frame_roi.rows - 3*h;//y
                 auxp4[0] = ((this->frame_roi.rows - 3*h) - auxc[1])/(auxc[0]); //x
-                //cout << "quarto" << auxp4 << endl;
+                this->datalog << "quarto" << auxp4 << endl;
                 if((auxp1[0] > image.cols) || (auxp2[0] > image.cols) || (auxp3[0] > image.cols) || (auxp4[0] > image.cols)){
                     i++;
                 }
@@ -688,7 +750,9 @@ void Camera::hough(Mat image, int threshold){
 }
 
 void Camera::houghP(Mat image, int nc, double lineLength, double maxGap){
-    this->linesP.clear();
+    this->datalog << "HoughP" << endl;
+    this->datalog << "NC: " << nc << " lineLength: " << lineLength << " maxGap: " << maxGap << endl;
+    this->linesP.clear(); 
     HoughLinesP(image, this->linesP, 1, CV_PI/180, nc, lineLength, maxGap); // 100, 100, 100); //32, 65, 100
 }
 
@@ -705,29 +769,30 @@ void Camera::miniROIs(Mat image){
         this->miniROI.push_back(aux);
     }
     
-    /*
-    imshow("1",this->miniROI[0]);
+    
+    /*imshow("1",this->miniROI[0]);
     imshow("2",this->miniROI[1]);
     imshow("3",this->miniROI[2]);
     imshow("4",this->miniROI[3]);
-    waitKey(0);
-    */
+    waitKey(0);*/
+    
 }
 
 void Camera::ROIsOfClusters(Mat image){
+    this->datalog << "ROIsOfClusters" << endl;
     this->clusters.clear();
     int xinit;
-    //cout << this->pline.size() << endl;
+    this->datalog << this->pline.size() << endl;
     for(int i = 0; i < this->pline.size(); i++){
-        if((pline[i].size()) > 30){
+        if((pline[i].size()) > 50){
             //cout << i << endl;
             xinit = (int)pline[i][0].x;
             Rect ROI = Rect(xinit, 0,((pline[i][(pline[i].size() - 1)].x) - pline[i][0].x), image.rows);
             Mat image_roi = image(ROI);
             Mat aux;
             image_roi.copyTo(aux);
-            //imshow("ROI", aux);
-            //waitKey(0);
+            /*imshow("ROI", aux);
+            waitKey(0);*/
             this->clusters.push_back(aux);
         }
     }    
@@ -763,6 +828,7 @@ void Camera::coefsCluster(vector<vector<Vec2f> > lines){
 }
 
 int Camera::medianMatrix(Mat image){
+    this->datalog << "MedianMatrix" << endl;
     int soma = 0;
     int size = 0;
     for(int i = 0; i < image.rows; i++){
@@ -773,6 +839,7 @@ int Camera::medianMatrix(Mat image){
             size++;
         }
     }
+    this->datalog << (soma/size) << endl;
     return (soma/size);
 }
 
@@ -822,6 +889,7 @@ Point2f Camera::centroid(Mat image){
 }
 
 void Camera::dynamicROI(Mat image){
+   this->datalog << "dynamicROI" << endl;
    int h = (image.rows/4);
    int k = 0;
    this->pline.clear();
@@ -840,12 +908,12 @@ void Camera::dynamicROI(Mat image){
             int xinit3 = this->points3[i].x;
             int xinit4 = this->points4[i].x;
             
-            /*
-            cout << "Primeiro ROI:  " << this->points[i].x << "..." << this->points[i].y << endl;
-            cout << "Segundo ROI:  " << this->points2[i].x << "..." << this->points2[i].y << endl;
-            cout << "Terceiro ROI:  " << this->points3[i].x << "..." << this->points3[i].y << endl;
-            cout << "Quarto ROI:  " << this->points4[i].x << "..." << this->points4[i].y << endl;
-            */
+            
+            this->datalog << "Primeiro ROI:  " << this->points[i].x << "..." << this->points[i].y << endl;
+            this->datalog << "Segundo ROI:   " << this->points2[i].x << "..." << this->points2[i].y << endl;
+            this->datalog << "Terceiro ROI:  " << this->points3[i].x << "..." << this->points3[i].y << endl;
+            this->datalog << "Quarto ROI:    " << this->points4[i].x << "..." << this->points4[i].y << endl;
+            
             
             if((xinit1 - 20) > 0){
                 if((xinit1 + 20) < image.cols){
@@ -981,46 +1049,47 @@ void Camera::dynamicROI(Mat image){
             plines.push_back(vaux);
             this->pline = plines;
             
-            /*
+           /* 
             imshow("Points",this->init_point);
             imshow("Primeira",this->image_roi1);
             imshow("Segunda",this->image_roi2);
             imshow("Terceira",this->image_roi3);
             imshow("Quarta",this->image_roi4);
             waitKey(0); 
-            */
+           */ 
             
        
    }
 }
 
 void Camera::MMQ(){
-    
+    this->datalog << "MMQ 1" << endl;
     this->mmq.clear();
     
     for(int i = 0; i < this->pline.size(); i++){
-        //cout << pline[i] << endl;
+        this->datalog << pline[i] << endl;
         Vec2f aux;
         float sx = 0, sy = 0, xx = 0, xy = 0, n = pline[i].size();
         for(int j = 0; j < this->pline[i].size(); j++){
             sx += this->pline[i][j].x;
             sy += this->pline[i][j].y;
-            xx += (this->pline[i][j].x)*(this->pline[i][j].x);
+            xx += pow(this->pline[i][j].x,2); //*(this->pline[i][j].x);
             xy += (this->pline[i][j].x)*(this->pline[i][j].y);
         }
-        aux[0] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
-        aux[1] = ((sy - (aux[0]*sx))/n); //Coef lin
-        //cout << aux << endl;
+        aux[0] = ((n*xy) - (sx*sy))/((n*xx) - (sx*sx)); //((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
+        aux[1] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((sy - (aux[0]*sx))/n); //Coef lin
+        this->datalog << aux << endl;
         this->mmq.push_back(aux);
     }
 }
 
 void Camera::MMQ(int np_min){
-    
+    this->datalog << "MMQ 2" << endl;
     this->mmq.clear();
-    //cout <<pline.size() << endl;
+    this->datalog << pline.size() << endl;
+    this->datalog << "np: " << np_min << endl;
     for(int i = 0; i < this->pline.size(); i++){
-        //cout << this->pline[i].size() << endl;
+        this->datalog << this->pline[i].size() << endl;
         if(this->pline[i].size() > np_min){
             Vec2f aux;
             float sx = 0, sy = 0, xx = 0, xy = 0, n = pline[i].size();
@@ -1031,9 +1100,9 @@ void Camera::MMQ(int np_min){
                 xy += (this->pline[i][j].x)*(this->pline[i][j].y);
             }
 
-            aux[0] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
-            aux[1] = ((sy - (aux[0]*sx))/n); //Coef lin
-        
+            aux[0] = ((sy*xx) - (sx*xy))/((n*xx)-(sx*sx)); //((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((n*xy) - ((sx)*(sy)))/((n*xx) - ((sx)*(sx)));//Coef Ang;
+            aux[1] = ((sy - (aux[0]*sx))/n); //((sy*xx) - (sx*xy))/((n*xx)-(sx*sx));//((sy - (aux[0]*sx))/n); //Coef lin
+            this->datalog << aux << endl;
             this->mmq.push_back(aux);
             
             /*if(abs(aux[0]) < 50){
@@ -1046,6 +1115,7 @@ void Camera::MMQ(int np_min){
 }
 
 void Camera::R(){
+    this->datalog << "R" << endl;
     this->final_coef.clear();
     for(int i = 0; i < this->pline.size(); i++){
         double sum = 0;
@@ -1054,7 +1124,7 @@ void Camera::R(){
             sum += (this->pline[i][j].x - xp)*(this->pline[i][j].x - xp);
         }
         int result = sqrt(sum);
-        //cout << "R  " << result << endl;
+        this->datalog << "R  " << result << endl;
         if(result < thrs){
             this->final_coef.push_back(mmq[i]);
         }
@@ -1068,6 +1138,7 @@ void Camera::R(){
 }
 
 void Camera::R2(){
+    this->datalog << "R2" << endl;
     this->final_coef.clear();
     for(int i = 0; i < this->pline.size(); i++){
         double sum = 0;
@@ -1076,15 +1147,17 @@ void Camera::R2(){
             sum += (this->pline[i][j].x - xp)*(this->pline[i][j].x - xp);
         }
         int result = sqrt(sum);
-        //cout << "R  " << result << endl;
+        this->datalog << "R  " << result << endl;
         if(result < thrs){
             this->final_coef.push_back(mmq[i]);
         }
     }
 }
 
-void Camera::expanding_lines(vector<Point2f> coef_retas){
-	int xi = 0, yi = 0, xf = 0, yf = 0;
+void Camera::expanding_lines(vector<Point2f> coef_retas, double p, double n){
+	this->datalog << "Expanding Lines" << endl;
+    this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
+    int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
     bool flag = false;
 	vector<Vec4f> lines;
@@ -1096,7 +1169,8 @@ void Camera::expanding_lines(vector<Point2f> coef_retas){
     this->lines_a.clear();
 
 	for(int i = 0; i < coef_retas.size(); i++){	
-		if (!((coef_retas[i].x > -3) && (coef_retas[i].x < 3))){
+		this->datalog << "coefs: " << coef_retas[i] << endl;
+        if (!((coef_retas[i].x < p) && (coef_retas[i].x > n))){
         xi = (yi - coef_retas[i].y)/coef_retas[i].x;
 		yf = (this->height/this->region);
 		xf = (yf - coef_retas[i].y)/coef_retas[i].x;
@@ -1112,7 +1186,7 @@ void Camera::expanding_lines(vector<Point2f> coef_retas){
             x_ord_trans[1] = yi;
             x_ord_trans[2] = xf;
             x_ord_trans[3] = yf;
-            //cout << "x_ord_trans" << x_ord_trans << endl;
+            this->datalog << "x_ord_trans" << x_ord_trans << endl;
             lines.push_back(x_ord_trans);
             lines_a.push_back(x_ord_trans);
         
@@ -1122,8 +1196,10 @@ void Camera::expanding_lines(vector<Point2f> coef_retas){
 	this->lines = lines;
 }
 
-void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
-	double xi = 0, yi = 0, xf = 0, yf = 0;
+void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas, double p, double n){
+	this->datalog << "Expanding Lines A" << endl;
+    this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
+    double xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
     bool flag = false;
 	vector<Vec4f> lines;
@@ -1135,7 +1211,8 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
     this->lines_a.clear();
 
 	for(int i = 0; i < coef_retas.size(); i++){	
-		if (!((coef_retas[i].first > -3) && (coef_retas[i].first < 3))){
+		if (!((coef_retas[i].first > n) && (coef_retas[i].first < p))){
+        this->datalog << "coefs - first: " << coef_retas[i].first << " second: " << coef_retas[i].second << endl;
         xi = (yi - coef_retas[i].second)/coef_retas[i].first;
 		yf = (this->height/this->region);
 		xf = (yf - coef_retas[i].second)/coef_retas[i].first;
@@ -1151,7 +1228,7 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
             x_ord_trans[1] = yi;
             x_ord_trans[2] = xf;
             x_ord_trans[3] = yf;
-            //cout << "x_ord_trans" << x_ord_trans << endl;
+            this->datalog << "x_ord_trans" << x_ord_trans << endl;
             lines.push_back(x_ord_trans);
             lines_a.push_back(x_ord_trans);
     }
@@ -1162,8 +1239,10 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas){
 
 }
 
-void Camera::expanding_lines_c(vector<Point2f> coef_retas){
-	int xi = 0, yi = 0, xf = 0, yf = 0;
+void Camera::expanding_lines_c(vector<Point2f> coef_retas, double p, double n){
+	this->datalog << "Expanding Lines C" << endl;
+    this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
+    int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
     bool flag = false;
 	vector<Vec4f> lines;
@@ -1173,7 +1252,7 @@ void Camera::expanding_lines_c(vector<Point2f> coef_retas){
 
 	for(int i = 0; i < coef_retas.size(); i++){	
 		if((pline[i].size()) > 50){
-            if (!((coef_retas[i].x > -3) && (coef_retas[i].x < 3))){
+            if (!((coef_retas[i].x > n) && (coef_retas[i].x < p))){
                 xi = (yi - coef_retas[i].y)/coef_retas[i].x;
                 if(xi < this->pline[i][0].x){
                     xi = this->pline[i][0].x;
@@ -1203,6 +1282,7 @@ void Camera::expanding_lines_c(vector<Point2f> coef_retas){
                     x_ord_trans[1] = yi;
                     x_ord_trans[2] = xf;
                     x_ord_trans[3] = yf;
+                    this->datalog << "x_ord_trans" << x_ord_trans << endl;
                     lines.push_back(x_ord_trans);
             }
             else{
@@ -1211,6 +1291,7 @@ void Camera::expanding_lines_c(vector<Point2f> coef_retas){
                 x_ord_trans[1] = 0;
                 x_ord_trans[2] = x_ord_trans[0];
                 x_ord_trans[3] = this->frame_roi.rows;
+                this->datalog << "x_ord_trans" << x_ord_trans << endl;
                 lines.push_back(x_ord_trans);
             }  
         }

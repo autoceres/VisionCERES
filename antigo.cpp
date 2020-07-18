@@ -38,12 +38,12 @@ int main(int argc, char *argv[]){
         imshow("Morfologica",cam.skeleton);
         cam.houghP(cam.binarized, 10, 65,(double)(cam.height/cam.region));
         cam.coefs1(cam.linesP);
-        cam.expanding_lines_a(cam.coef_retas);
+        cam.expanding_lines_a(cam.coef_retas, 0.87, -0.7);
 
         sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
 
         cam.retas_med(cam.lines_a);
-        cam.expanding_lines_a(cam.coef_med_retas);
+        cam.expanding_lines_a(cam.coef_med_retas, 0.87, -0.7);
         cam.drawLines_a();
         imshow("Resultado",cam.frame_final);
 

@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
         cam.SegAndCluster(cam.skeleton,30);
         cam.verifingClusters(cam.pline);
         cam.MMQ();
-        cam.expanding_lines_c(cam.mmq);
+        cam.expanding_lines_c(cam.mmq, 0.87, -0.7);
         cam.drawLines();
         imshow("Resultado",cam.frame_final);
         
