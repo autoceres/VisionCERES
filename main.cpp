@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
         cam.dynamicROI(cam.skeleton);
         cam.MMQ();
         cam.R();
-        cam.expanding_lines(cam.final_coef);
+        cam.expanding_lines(cam.final_coef, 0.87, -0.7);
         cam.drawLines();
         imshow("Resultado",cam.frame_final);
         
