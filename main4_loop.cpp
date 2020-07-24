@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
 
         cam.name += to_string(i);
     
-        cam.dataLog(name_arq);
+        cam.dataLog(name_arq, "Metodo4");
         
         cam.frame = imread(cam.img_fn, IMREAD_COLOR);
         cam.gettingSize(cam.frame.cols,cam.frame.rows);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
         
         cam.morphOp(cam.segmented);
         //cam.morphologicalOperations(cam.segmented);
-        cam.SegAndCluster(cam.morph,30);
+        cam.SegAndCluster(cam.morph,15);
         
         cam.verifingClusters(cam.pline);
         cam.ROIsOfClusters(cam.morph);
@@ -53,8 +53,14 @@ int main(int argc, char *argv[]){
         cam.writingFile(name_arq);
         imwrite(name,cam.frame_final);
         
-        cam.cap.release();
-        cam.datalog.close();      
+        cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        
+        cam.datalog.close();
+        cam.tempos.close();
+        cam.all.close();
+        
+        cam.cap.release();      
     }
     cout << "Done!" << endl;
     destroyAllWindows();

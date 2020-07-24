@@ -16,6 +16,7 @@
 #include <string>
 #include <cstdlib>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 #define thrs 10
@@ -110,6 +111,11 @@ class Camera{
     
     ofstream arquivo;
     ofstream datalog;
+    ofstream tempos;
+    ofstream all;
+
+    clock_t last_time;
+
     //Aqui você coloca os métodos
     Camera(int id_cam, int region);
 
@@ -157,7 +163,7 @@ class Camera{
     void centroids(Mat image);
     
     void writingFile(string name);
-    void dataLog(string name);
+    void dataLog(string name, string met);
     
     int medianMatrix(Mat image);
 
@@ -217,21 +223,42 @@ void Camera::writingFile(string name){
     this->arquivo.close();
 }
 
-void Camera::dataLog(string name){
+void Camera::dataLog(string name, string met){
     string path = "DataLog/";
+    string path_t = "Tempos/";
+    string path_a = "All/";
     string extension = ".txt";
     name += extension;
     path += name;
+    path_t += name;
+
+    met += extension;
+    path_a += met;
 
     this->datalog.open(path, ios::out);
+    this->tempos.open(path_t, ios::out);
+    this->all.open(path_a, ios::app);
 
     if(!this->datalog){
+        cout << "Falha ao iniciar o DataLog"  << endl;
+        abort();
+    }
+
+    if(!this->tempos){
+        cout << "Falha ao iniciar o DataLog"  << endl;
+        abort();
+    }
+
+    this->tempos << "Iniciando o txt...: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+
+    if(!this->all){
         cout << "Falha ao iniciar o DataLog"  << endl;
         abort();
     }
 }
 
 void Camera::creatingRoi(Mat image){
+    this->tempos << "Iniciando Creating ROI: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     int xinit = 0;  
 	int yinit = ((this->height) - (this->height/this->region));
     
@@ -241,12 +268,16 @@ void Camera::creatingRoi(Mat image){
     this->datalog << "creatingROI" << endl;
     this->datalog << "ROI " << xinit << " " << yinit << " "
     << this->width << " " << (this->height/this->region) << endl;
+
+    this->tempos << "Finalizando Creating ROI: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::Segmentation(Mat image){
+    this->tempos << "Iniciando a Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     int i = 0;
     int j = 0;
-    
+    int gp = 0;
+
     ofstream arq;
     string path = "Segmentation/";
     string extention = ".txt";
@@ -270,7 +301,8 @@ void Camera::Segmentation(Mat image){
 			color[0] = 255; 
 			color[1] = 255;
 			color[2] = 255;
-			}
+			gp++;
+            }
 			else{
 			//Muda o pixel para preto
 			color[0] = 0; 
@@ -281,10 +313,15 @@ void Camera::Segmentation(Mat image){
 		}
 	}
 	this->segmented = image;
+    this->tempos << "Percentual de Pixels verdes: " << (((double)gp/(double)((this->height/this->region)*(this->width)))*100) << "%" << endl;
+    this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+
     arq.close();
+
 }
 
 void Camera::SegAndCluster(Mat image, int d){
+    this->tempos << "Iniciando Clusterização pixel-a-pixel: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     int i = 0;
     int j = 0;
 
@@ -356,9 +393,12 @@ void Camera::SegAndCluster(Mat image, int d){
     this-> pb = pb;
     this->pline = clusters;
     this->datalog << "Fim" << endl;
+
+    this->tempos << "Finalizando Clusterização pixel-a-pixel: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::verifingClusters(vector<vector<Point2f> > line){
+    this->tempos << "Iniciando a verificação dos clusters: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     bool check = true;
     while(check){
         check = false;
@@ -392,6 +432,8 @@ void Camera::verifingClusters(vector<vector<Point2f> > line){
             }
         this->pline = l;
     }
+
+    this->tempos << "Finalizando a verificação dos clusters: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::erodeConfig(int m, int n){
@@ -413,15 +455,18 @@ void Camera::skeletonConfig(int m, int n){
 }
 
 void Camera::morphOp(Mat image){
+    this->tempos << "Iniciando a Erosão e Dilatação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     //Opening
     erode(this->segmented,this->erosion,this->element1);
     dilate(this->erosion,this->dilation,this->element2);
     //Image Processing
     cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
     binarized.copyTo(this->morph);
+    this->tempos << "Finalizando a Erosão e Dilatação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::morphologicalOperations(Mat image){
+    this->tempos << "Iniciando Operações Morfológicas: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     //Opening
     erode(this->segmented,this->erosion,this->element1);
     dilate(this->erosion,this->dilation,this->element2);
@@ -451,6 +496,7 @@ void Camera::morphologicalOperations(Mat image){
     //Pruning
     skel.copyTo(this->skeleton);
     skel.copyTo(this->morph);
+    this->tempos << "Finalizando Operações Morfológicas: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::Otsu_first(Mat image, double min, double max){
@@ -475,6 +521,7 @@ bool cmpVecxf(Vec4d &a, Vec4d &b){
 }
 
 void Camera::coefs1(vector<Vec4d> &vv){
+    this->tempos << "Iniciando Coefs1: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     vector<pair<double,double> > coef_temp;
     this->coef_retas.clear();
 	double a = 0;
@@ -491,6 +538,7 @@ void Camera::coefs1(vector<Vec4d> &vv){
 			}
 		}
     this->coef_retas = coef_temp;
+    this->tempos << "Finalizando Coefs1: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 vector<pair<double,double > > coefs2(vector<vector<Vec4d> > &vv){
@@ -514,7 +562,8 @@ vector<pair<double,double > > coefs2(vector<vector<Vec4d> > &vv){
 }
 
 void Camera::retas_med(vector<Vec4d> &pontos){
-	vector<vector<Vec4d> > classes_total;
+	this->tempos << "Iniciando Retas Médias: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    vector<vector<Vec4d> > classes_total;
 	//vector<Vec4d> init;
 	Vec4d trans;
 	
@@ -565,9 +614,12 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 	this->datalog << "Tamanho:  " << classes_total.size() << endl;
 	ans = coefs2(classes_total);
 	this->coef_med_retas = ans;
+
+    this->tempos << "Finalizando Retas Médias: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::findingCenters(Mat image){
+    this->tempos << "Iniciando Finding Centers: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "Finding Centers" << endl;
 	this->point = Mat::zeros(Size(image.cols,image.rows),CV_8UC3);
     
@@ -630,9 +682,11 @@ void Camera::findingCenters(Mat image){
 	}
 	//imshow("Centroides filtrados", this->point);
 	this->datalog << "Quantidade de Centroides Filtrados  " << points.size() << endl;
+    this->tempos << "Finalizando Finding Centers: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::ordinating(Mat image, double range){
+    this->tempos << "Inicializando Ordinating: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 	this->datalog << "Ordinating" << endl;
     
     int clss = 1;
@@ -681,9 +735,11 @@ void Camera::ordinating(Mat image, double range){
 	this->size_classes.push_back(clss);
     this->pline = pline;
 	this->datalog << "Quantidade de classes" << this->pline.size() << endl;
+    this->tempos << "Finalizando Ordinating: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::hough(Mat image, int threshold){
+    this->tempos << "Iniciando Hough Tradicional: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "Hough" << endl;
     vector<Vec2f> lines;
     int count = 0;
@@ -747,16 +803,21 @@ void Camera::hough(Mat image, int threshold){
             }
         }
     }
+    this->tempos << "Finalizando Hough Tradicional: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::houghP(Mat image, int nc, double lineLength, double maxGap){
+    this->tempos << "Iniciando HoughP: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "HoughP" << endl;
     this->datalog << "NC: " << nc << " lineLength: " << lineLength << " maxGap: " << maxGap << endl;
     this->linesP.clear(); 
     HoughLinesP(image, this->linesP, 1, CV_PI/180, nc, lineLength, maxGap); // 100, 100, 100); //32, 65, 100
+
+    this->tempos << "Finalizando HoughP: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::miniROIs(Mat image){
+    this->tempos << "Iniciando mini ROIs: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     int xinit = 0;  
     int h = (image.rows/4);
     this->miniROI.clear();
@@ -775,10 +836,11 @@ void Camera::miniROIs(Mat image){
     imshow("3",this->miniROI[2]);
     imshow("4",this->miniROI[3]);
     waitKey(0);*/
-    
+    this->tempos << "Finalizando mini ROIs: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::ROIsOfClusters(Mat image){
+    this->tempos << "Iniciando ROIsOfClusters: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "ROIsOfClusters" << endl;
     this->clusters.clear();
     int xinit;
@@ -791,11 +853,12 @@ void Camera::ROIsOfClusters(Mat image){
             Mat image_roi = image(ROI);
             Mat aux;
             image_roi.copyTo(aux);
-            /*imshow("ROI", aux);
-            waitKey(0);*/
+            //imshow("ROI", aux);
+            //waitKey(0);
             this->clusters.push_back(aux);
         }
-    }    
+    }
+    this->tempos << "Finalizando ROIsOfClusters: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;    
 }
 
 void Camera::houghOnClusters(vector<Mat> image){
@@ -828,6 +891,7 @@ void Camera::coefsCluster(vector<vector<Vec2f> > lines){
 }
 
 int Camera::medianMatrix(Mat image){
+    //this->tempos << "Iniciando MedianMatrix: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "MedianMatrix" << endl;
     int soma = 0;
     int size = 0;
@@ -840,6 +904,7 @@ int Camera::medianMatrix(Mat image){
         }
     }
     this->datalog << (soma/size) << endl;
+    //this->tempos << "Finalizando MedianMatrix: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     return (soma/size);
 }
 
@@ -889,13 +954,14 @@ Point2f Camera::centroid(Mat image){
 }
 
 void Camera::dynamicROI(Mat image){
-   this->datalog << "dynamicROI" << endl;
-   int h = (image.rows/4);
-   int k = 0;
-   this->pline.clear();
-   vector<vector<Point2f> > plines;
-   plines.clear();
-   for(int i = 0; i < this->points.size(); i++){
+    this->tempos << "Iniciando dynamicROI: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->datalog << "dynamicROI" << endl;
+    int h = (image.rows/4);
+    int k = 0;
+    this->pline.clear();
+    vector<vector<Point2f> > plines;
+    plines.clear();
+    for(int i = 0; i < this->points.size(); i++){
             int t = 0;
 
             Vec2f aux;
@@ -1060,9 +1126,11 @@ void Camera::dynamicROI(Mat image){
             
        
    }
+   this->tempos << "Finalizando dynamicROI: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::MMQ(){
+    this->tempos << "Iniciando MMQ 1: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "MMQ 1" << endl;
     this->mmq.clear();
     
@@ -1081,9 +1149,11 @@ void Camera::MMQ(){
         this->datalog << aux << endl;
         this->mmq.push_back(aux);
     }
+    this->tempos << "Finalizando MMQ 1: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::MMQ(int np_min){
+    this->tempos << "Iniciando MMQ 2: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "MMQ 2" << endl;
     this->mmq.clear();
     this->datalog << pline.size() << endl;
@@ -1112,9 +1182,11 @@ void Camera::MMQ(int np_min){
         }
     }
     //cout << "Quantidade de linhas: " << mmq.size() << endl;
+    this->tempos << "Finalizando MMQ 2: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::R(){
+    this->tempos << "Iniciando R: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "R" << endl;
     this->final_coef.clear();
     for(int i = 0; i < this->pline.size(); i++){
@@ -1135,9 +1207,11 @@ void Camera::R(){
             this->final_coef.push_back(aux);
         }
     }
+    this->tempos << "Finalizando R: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::R2(){
+    this->tempos << "Iniciando R2: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->datalog << "R2" << endl;
     this->final_coef.clear();
     for(int i = 0; i < this->pline.size(); i++){
@@ -1152,10 +1226,12 @@ void Camera::R2(){
             this->final_coef.push_back(mmq[i]);
         }
     }
+    this->tempos << "Finalizando R2: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::expanding_lines(vector<Point2f> coef_retas, double p, double n){
-	this->datalog << "Expanding Lines" << endl;
+	this->tempos << "Iniciando Expanding Lines: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->datalog << "Expanding Lines" << endl;
     this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
     int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
@@ -1194,10 +1270,12 @@ void Camera::expanding_lines(vector<Point2f> coef_retas, double p, double n){
     }
 	this->lines_a = lines_a;
 	this->lines = lines;
+    this->tempos << "Finalizando Expanding Lines: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas, double p, double n){
-	this->datalog << "Expanding Lines A" << endl;
+	this->tempos << "Iniciando Expanding Lines A: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->datalog << "Expanding Lines A" << endl;
     this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
     double xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
@@ -1236,11 +1314,12 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas, double p,
     this->lines_a = lines_a;
 	this->lines = lines;
     
-
+    this->tempos << "Finalizando Expanding Lines A: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::expanding_lines_c(vector<Point2f> coef_retas, double p, double n){
-	this->datalog << "Expanding Lines C" << endl;
+	this->tempos << "Iniciando Expanding Lines C: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->datalog << "Expanding Lines C" << endl;
     this->datalog << "Positivo: " << p << " Negativo: " << n << endl;
     int xi = 0, yi = 0, xf = 0, yf = 0;
     int aux = 0;
@@ -1297,6 +1376,7 @@ void Camera::expanding_lines_c(vector<Point2f> coef_retas, double p, double n){
         }
     }
 	this->lines  = lines;
+    this->tempos << "Finalizando Expanding Lines C: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
 void Camera::estimated_lines(){
@@ -1321,7 +1401,7 @@ void Camera::estimated_lines(){
 }
 
 void Camera::drawLines(){
-    //cout << "Quantidade de linhas  " << this->lines.size() << endl;
+    this->tempos << "Quantidade de linhas  " << this->lines.size() << endl;
     for(int i = 0; i < this->lines.size(); i++){
 		line(this->frame_final, Point(this->lines[i][0], (this->lines[i][1] + (this->height - (this->height/this->region)))), Point(this->lines[i][2], (this->lines[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
@@ -1329,7 +1409,7 @@ void Camera::drawLines(){
 }
 
 void Camera::drawLines_a(){
-    //cout << "Quantidade de linhas  " << this->lines_a.size() << endl;
+    this->tempos << "Quantidade de linhas  " << this->lines_a.size() << endl;
     for(int i = 0; i < this->lines_a.size(); i++){
 		line(this->frame_final, Point(this->lines_a[i][0], (this->lines_a[i][1] + (this->height - (this->height/this->region)))), Point(this->lines_a[i][2], (this->lines_a[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);
 	}
@@ -1337,7 +1417,7 @@ void Camera::drawLines_a(){
 }
 
 void Camera::drawLines_c(){
-    //cout << "Quantidade de linhas  " << this->flinesC.size() << endl;
+    this->tempos << "Quantidade de linhas  " << this->flinesC.size() << endl;
 
     for(int i = 0; i < this->flinesC.size(); i++){
 		line(this->frame_final, Point(this->flinesC[i][0], (this->flinesC[i][1] + (this->height - (this->height/this->region)))), Point(this->flinesC[i][2], (this->flinesC[i][3] + (this->height - (this->height/this->region)))), Scalar(255,0,0), 7, LINE_AA);

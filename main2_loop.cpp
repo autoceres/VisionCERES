@@ -26,7 +26,7 @@ int main(int argc, char *argv[]){
 
             cam.name += to_string(i);
     
-            cam.dataLog(name_arq);
+            cam.dataLog(name_arq, "Metodo3");
 
             cam.frame = imread(cam.img_fn, IMREAD_COLOR);
             cam.gettingSize(cam.frame.cols,cam.frame.rows);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]){
             cam.creatingRoi(cam.frame);
             cam.Segmentation(cam.frame_roi);
 
-            cam.erodeConfig(7, 7);
+            cam.erodeConfig(9, 9);
             cam.dilateConfig(3, 3);
             cam.skeletonConfig(3, 3);
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
             cam.morphologicalOperations(cam.segmented);
 
             cam.findingCenters(cam.morph);
-            cam.ordinating(cam.morph, 20);
+            cam.ordinating(cam.morph, 30);
             cam.MMQ(2);
             //cam.R2();
             cam.expanding_lines(cam.mmq, 0.3, -0.3);
@@ -54,8 +54,14 @@ int main(int argc, char *argv[]){
             cam.writingFile(name_arq);
             imwrite(name,cam.frame_final);
             
-            cam.cap.release();
+            cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+            cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        
             cam.datalog.close();
+            cam.tempos.close();
+            cam.all.close();
+        
+            cam.cap.release();;
         }
     }
     cout << "Done!" << endl;
