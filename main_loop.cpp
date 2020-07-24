@@ -6,6 +6,7 @@
 #include "linhas.h"
 
 int main(int argc, char *argv[]){
+    float tp = ((float)clock()/CLOCKS_PER_SEC);
     for(int i = 1; i <= stoi(argv[1]); i++){
         string pref = "_metodo2_saida.png";
         string path = "Imagens/";
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]){
         
         cam.name += to_string(i);
     
-        cam.dataLog(name_arq);
+        cam.dataLog(name_arq, "Metodo2");
 
         cam.frame = imread(cam.img_fn, IMREAD_COLOR);
         cam.gettingSize(cam.frame.cols,cam.frame.rows);
@@ -41,7 +42,7 @@ int main(int argc, char *argv[]){
         cam.morphologicalOperations(cam.segmented);
         //cam.morphOp(cam.segmented);
 
-        cam.hough(cam.skeleton, 30);
+        cam.hough(cam.skeleton, 20);
 
         cam.miniROIs(cam.morph);
         cam.dynamicROI(cam.morph);
@@ -60,8 +61,14 @@ int main(int argc, char *argv[]){
         cam.writingFile(name_arq);
         imwrite(name,cam.frame_final);
         
-        cam.cap.release();
+        cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        
         cam.datalog.close();
+        cam.tempos.close();
+        cam.all.close();
+        
+        cam.cap.release();
     }
     cout << "Done!" << endl;
     destroyAllWindows();
