@@ -31,34 +31,34 @@ int main(int argc, char *argv[]){
     
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
-    cam.Segmentation(cam.frame_roi);
-
-    //imshow("Seg",cam.segmented);
-
-    cam.erodeConfig(9, 9);
-    cam.dilateConfig(3, 3);
+    //cam.Segmentation(cam.frame_roi);
+    cam.limiarSeg(cam.frame_roi);
+    imshow("Seg",cam.segmented);
+    cam.erodeConfig(3, 3);
+    cam.dilateConfig(5, 5);
     cam.skeletonConfig(3, 3);
 
     cam.morphOp(cam.segmented);
     //cam.morphologicalOperations(cam.segmented);
-    cam.SegAndCluster(cam.morph,15);
+    
+    imshow("E",cam.erosion);
+    imshow("D",cam.dilation);
+    imshow("Bin", cam.binarized);
+    
+    cam.KMeans(cam.morph, 10);
 
-    //imshow("E",cam.erosion);
-    //imshow("D",cam.dilation);
-    //imshow("Bin", cam.binarized);
+    cam.eigens(cam.pline);
+    cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
 
-    cam.verifingClusters(cam.pline);
-    cam.ROIsOfClusters(cam.morph);
-    cam.MMQ();
-    cam.expanding_lines_c(cam.mmq, 0.87, -0.7);
+    cam.expanding_lines_a(cam.coef_retas, 30, 135);
     cam.drawLines();
-
-    //imshow("Final", cam.frame_final);
+    
+    imshow("Final", cam.frame_final);
     
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     
-    //waitKey(0);
+    waitKey(0);
 
     cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
     cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
