@@ -36,11 +36,11 @@ int main(int argc, char *argv[]){
             //cam.Segmentation(cam.frame_roi);
             //imshow("Seg",cam.segmented);
             
-            cam.limiarSeg(cam.frame_roi);
+            cam.Segmentation2(cam.frame_roi);
             //imshow("Seg2",cam.segmented);
-
-            cam.erodeConfig(5, 5);
-            cam.dilateConfig(3, 3);
+            
+            cam.erodeConfig(3, 3);
+            cam.dilateConfig(5, 5);
             cam.skeletonConfig(3, 3);
             
             cam.morphOp(cam.segmented);
@@ -60,28 +60,15 @@ int main(int argc, char *argv[]){
             
             cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
             cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
+
+            cout << i << endl;
         
             cam.datalog.close();
             cam.tempos.close();
             cam.all.close();
         
-            cam.cap.release();;
-        //}
-        /*else{
-            string name;
-            string name_arq;
-            Camera cam(0,4);
-
-            cam.img_fn += "Dataset/";
-            cam.img_fn += to_string(i);
-            cam.img_fn += cam.img_ext;
-            
-            name_arq += to_string(i);
-            name_arq += "_metodo3";
+            cam.cap.release();
         
-            cam.dataLog(name_arq, "Metodo3");
-            cam.all << 0 << endl;
-        }*/
     }
     cout << "Done! " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     destroyAllWindows();

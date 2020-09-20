@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
 
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
-        cam.houghP(cam.binarized, 10, 65,(double)(cam.height/cam.region));
+        cam.houghP(cam.binarized, 10, 65,(double)(cam.height/cam.region), -2.5, 2.5);
         cam.coefs1(cam.linesP);
         cam.expanding_lines_a(cam.coef_retas, 0.87, -0.7);
 

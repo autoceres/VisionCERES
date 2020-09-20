@@ -31,42 +31,43 @@ int main(int argc, char *argv[]){
    
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
-    cam.Segmentation(cam.frame_roi);
     
-    //imshow("Seg",cam.segmented);
-
-    cam.erodeConfig(7, 7);
-    cam.dilateConfig(3, 3);
+    cam.Segmentation2(cam.frame_roi);
+    imshow("Seg2",cam.segmented);
+    
+    cam.erodeConfig(3, 3);
+    cam.dilateConfig(5, 5);
     cam.skeletonConfig(3, 3);
     
-    cam.morphologicalOperations(cam.segmented);
-    //cam.morphOp(cam.segmented);
+    //cam.morphologicalOperations(cam.segmented);
+    cam.morphOp(cam.segmented);
     
-    //imshow("E",cam.erosion);
-    //imshow("D",cam.dilation);
-    //imshow("Morfologica",cam.morph);
-    //imshow("Bin", cam.binarized);
-
-    cam.hough(cam.morph, 20);
+    imshow("E",cam.erosion);
+    imshow("D",cam.dilation);
+    imshow("Morfologica",cam.morph);
+    imshow("Canny", cam.canny);
+    cam.hough(cam.canny, 20, 30, 135);
     
-    cam.miniROIs(cam.morph);
-    cam.dynamicROI(cam.morph);
+    cam.miniROIs(cam.canny);
+    cam.dynamicROI(cam.canny);
+    //cam.eigens(cam.pline);
+    //cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
     cam.MMQ();
     cam.R();
-    cam.expanding_lines(cam.final_coef, 3, -3);
+    cam.expanding_lines(cam.final_coef, 30, 135);
 
     sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
 
     cam.retas_med(cam.lines_a);
-    cam.expanding_lines_a(cam.coef_med_retas, 3, -3);
+    cam.expanding_lines_a(cam.coef_med_retas, 30, 135);
     cam.drawLines();
     
-    //imshow("Final", cam.frame_final);
+    imshow("Final", cam.frame_final);
     
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     
-    //waitKey(0);
+    waitKey(0);
 
     cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
     cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;

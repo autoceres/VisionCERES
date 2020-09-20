@@ -36,7 +36,7 @@ int main(int argc, char *argv[]){
         
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
-        cam.hough(cam.skeleton, 10);
+        cam.hough(cam.skeleton, 10, 40, 135);
         cam.miniROIs(cam.skeleton);
         cam.dynamicROI(cam.skeleton);
         cam.MMQ();
