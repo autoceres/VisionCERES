@@ -31,14 +31,12 @@ int main(int argc, char *argv[]){
    
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
-    //cam.Segmentation(cam.frame_roi);
-    //imshow("Seg",cam.segmented);
     
-    cam.limiarSeg(cam.frame_roi);
+    cam.Segmentation2(cam.frame_roi);
     imshow("Seg2",cam.segmented);
-
-    cam.erodeConfig(5, 5);
-    cam.dilateConfig(3, 3);
+    
+    cam.erodeConfig(3, 3);
+    cam.dilateConfig(5, 5);
     cam.skeletonConfig(3, 3);
     
     cam.morphOp(cam.segmented);

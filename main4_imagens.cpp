@@ -31,9 +31,10 @@ int main(int argc, char *argv[]){
     
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
-    //cam.Segmentation(cam.frame_roi);
-    cam.limiarSeg(cam.frame_roi);
-    imshow("Seg",cam.segmented);
+    
+    cam.Segmentation2(cam.frame_roi);
+    imshow("Seg2",cam.segmented);
+    
     cam.erodeConfig(3, 3);
     cam.dilateConfig(5, 5);
     cam.skeletonConfig(3, 3);
@@ -44,7 +45,6 @@ int main(int argc, char *argv[]){
     imshow("E",cam.erosion);
     imshow("D",cam.dilation);
     imshow("Bin", cam.binarized);
-    
     cam.KMeans(cam.morph, 10);
 
     cam.eigens(cam.pline);

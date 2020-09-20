@@ -7,12 +7,6 @@
 
 int main(int argc, char *argv[]){
     for(int i = 1; i <= stoi(argv[1]); i++){
-        if(!((i == 92) || (i== 93) || (i== 94) || (i== 95) || (i== 96)
-                       || (i== 97) || (i==110) || (i==114) || (i==132)
-                       || (i==165) || (i==177) || (i==178) || (i==179)
-                       || (i==182) || (i==183) || (i==184) || (i==185)
-                       || (i==191) || (i==193))){
-            //cout << i << endl;
             double init = ((double)clock()/CLOCKS_PER_SEC)*1000;
             string pref = "_metodo4_saida.png";
             string path = "Imagens/";
@@ -39,9 +33,10 @@ int main(int argc, char *argv[]){
             
             cam.frame.copyTo(cam.frame_final);
             cam.creatingRoi(cam.frame);
-            //cam.Segmentation(cam.frame_roi);
-            cam.limiarSeg(cam.frame_roi);
-            //imshow("Seg",cam.segmented);
+            
+            cam.Segmentation2(cam.frame_roi);
+            //imshow("Seg2",cam.segmented);
+            
             cam.erodeConfig(3, 3);
             cam.dilateConfig(5, 5);
             cam.skeletonConfig(3, 3);
@@ -75,22 +70,9 @@ int main(int argc, char *argv[]){
             cam.all.close();
             
             cam.cap.release();      
-        }
-        else{
-            string name;
-            string name_arq;
-            Camera cam(0,4);
-
-            cam.img_fn += "Dataset/";
-            cam.img_fn += to_string(i);
-            cam.img_fn += cam.img_ext;
-            
-            name_arq += to_string(i);
-            name_arq += "_metodo4";
-
-            cam.dataLog(name_arq, "Metodo4");
-            cam.all << 0 << endl;
-        }
+        
+            cout << i << endl;
+        
     }
     cout << "Done! " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     destroyAllWindows();

@@ -7,6 +7,7 @@
 
 int main(int argc, char *argv[]){
     for(int i = 1; i <= stoi(argv[1]); i++){
+        double init = ((double)clock()/CLOCKS_PER_SEC)*1000;
         string pref = "_metodo1_saida.png";
         string path = "Imagens/";
         string name;
@@ -32,31 +33,33 @@ int main(int argc, char *argv[]){
     
         cam.frame.copyTo(cam.frame_final);
         cam.creatingRoi(cam.frame);
-        cam.Segmentation(cam.frame_roi);
         
-        cam.erodeConfig(7, 7);
-        cam.dilateConfig(3, 3);
+        cam.Segmentation2(cam.frame_roi);
+       
+        cam.erodeConfig(3, 3);
+        cam.dilateConfig(5, 5);
         cam.skeletonConfig(3, 3);
-        
-        //cam.morphOp(cam.segmented);
-        cam.morphologicalOperations(cam.segmented);
-        
-        cam.houghP(cam.morph, 10, 65,(cam.height/cam.region));
-        cam.coefs1(cam.linesP);
-        cam.expanding_lines_a(cam.coef_retas, 3, -3);
 
+        cam.morphOp(cam.segmented);
+        //cam.morphologicalOperations(cam.segmented);
+
+        cam.houghP(cam.canny, 20, ((cam.height/cam.region)*0.65),(cam.height/cam.region), 30, 135);
+        cam.coefs1(cam.linesP);
+        cam.expanding_lines_a(cam.coef_retas, 30, 135);
         sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
 
         cam.retas_med(cam.lines_a);
-        cam.expanding_lines_a(cam.coef_med_retas, 3, -3);
+        cam.expanding_lines_a(cam.coef_med_retas, 30, 135);
         cam.drawLines();
-        
+
         cam.writingFile(name_arq);
         imwrite(name,cam.frame_final);
         
         cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
-        cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
+        cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
         
+        cout << i << endl;
+
         cam.datalog.close();
         cam.tempos.close();
         cam.all.close();
@@ -64,7 +67,7 @@ int main(int argc, char *argv[]){
         cam.cap.release();   
     }
 
-    cout << "Done!" << endl;
+    cout << "Done! " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     destroyAllWindows();
 	
     return 0;
