@@ -128,11 +128,18 @@ class Camera{
     void gettingSize(int width, int height);
     void creatingRoi(Mat image);
     
+    //Métodos de Segmentação
     void Segmentation(Mat image);
+    void Segmentation2(Mat image);
+    void Segmentation3(Mat image);
+    void Segmentation4(Mat image);
     void limiarSeg(Mat image);
+
     void SegAndCluster(Mat image, int d);
     void verifingClusters(vector<vector<Point2f> > pline);
     void Clusters(Mat image, vector<vector<Point2f> > line);
+    
+    //Operações Morfológica
     void erodeConfig(int m, int n);
     void dilateConfig(int m, int n);
     void skeletonConfig(int m, int n);
@@ -285,35 +292,37 @@ void Camera::creatingRoi(Mat image){
 void Camera::Segmentation(Mat image){
     //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     this->tempos << "Iniciando a Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
-    int i = 0;
-    int j = 0;
-    int gp = 0;
-
+    
+    vector<Mat> chanels;
+    Mat RB;
+    Mat M1, M2;
     ofstream arq;
     string path = "Segmentation/";
     string extention = ".txt";
+    
     this->name += extention;
-	path += this->name;
+    path += this->name;
     arq.open(path, ios::out);
+    
     if(!arq){
         cout << "Falha ao abrir o DataLog da Segmentação"  << endl;
         abort();
     }
     
-    //cout<<"Iniciando a busca"<<endl;
-	for(i = 0; i<image.cols; i++){						//imagem.size().width = imagem.cols -> dependendo de como a imagem está
-		for(j = 0; j<image.rows; j++){					//imagem.size().height = imagem.rows -> dependendo de como a imagem está
+    split(image, chanels);
+    add(chanels[2], chanels[0], RB);
+    threshold(RB,M1,this->t,255,0);
+    imshow("M1",M1); 
+    for(int i = 0; i<image.cols; i++){						//imagem.size().width = imagem.cols -> dependendo de como a imagem está
+		for(int j = 0; j<image.rows; j++){					//imagem.size().height = imagem.rows -> dependendo de como a imagem está
 			Vec3b color = image.at<Vec3b>(Point(i,j));
-            //cout << "i: " << i << " j: " << j << " color: " << color <<  endl;
 			//Condições para o pixel ser considerado verde funções 2.2 e 2.3 TCC do Felipe
-			if((((color[0] + color[2])*(this->k))<color[1]) && ((color[0] + color[2])>(this->t))){ 
-			arq << "i: " << i << " j: " << j << " color: " << color <<  endl;
-            //Muda o pixel para branco caso seja verde
+			if((((color[0] + color[2])*k)<color[1])){ 
+			//Muda o pixel para branco caso seja verde
 			color[0] = 255; 
 			color[1] = 255;
 			color[2] = 255;
-			gp++;
-            }
+			}
 			else{
 			//Muda o pixel para preto
 			color[0] = 0; 
@@ -323,8 +332,15 @@ void Camera::Segmentation(Mat image){
 			image.at<Vec3b>(Point(i,j)) = color; //Granvando os novos pixeis na matriz
 		}
 	}
-	this->segmented = image;
-    this->tempos << "Percentual de Pixels verdes: " << (((double)gp/(double)((this->height/this->region)*(this->width)))*100) << "%" << endl;
+    //Mat aux1 = (RB*(this->k));
+    //Mat aux2;
+    //aux1.convertTo(aux2, CV_8UC1);
+    //M2 = (chanels[1]) > aux2;
+    image.copyTo(M2);
+    cvtColor(image,M2, COLOR_BGR2GRAY);
+    imshow("M2",M2);
+    bitwise_and(M1,M2,this->segmented);
+    //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
     this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 
     arq.close();
@@ -332,17 +348,108 @@ void Camera::Segmentation(Mat image){
 
 }
 
+void Camera::Segmentation2(Mat image){
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->tempos << "Iniciando a Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    
+    vector<Mat> chanels;
+    Mat RB;
+    
+    split(image, chanels);
+    add(chanels[2], chanels[0], RB);
+    subtract(2*chanels[1],RB,this->segmented);
+    threshold(this->segmented,this->segmented, 50, 255, CV_THRESH_BINARY);
+    //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
+    this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+}
+
+void Camera::Segmentation3(Mat image){
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->tempos << "Iniciando a Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    
+    vector<Mat> chanels;
+    Mat RB;
+    Mat BGR;
+    Mat R, G, B;
+
+    split(image, chanels);
+    add(chanels[2], chanels[0], RB);
+    add(RB, chanels[1], BGR);
+
+    divide(chanels[0], BGR, B);
+    divide(chanels[1], BGR, G);
+    divide(chanels[2], BGR, R);
+
+    imshow("B", B);
+    imshow("G", G);
+    imshow("R", R);
+    
+    add(R, B, RB);
+    
+    subtract(2*G,RB,this->segmented);
+    threshold(this->segmented,this->segmented, 50, 255, CV_THRESH_BINARY);
+    //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
+    this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+}
+
+void Camera::Segmentation4(Mat image){
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    this->tempos << "Iniciando a Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    
+    vector<Mat> chanels;
+    Mat RB;
+    Mat R, G, B;
+
+    double mB, mG, mR;
+
+    split(image, chanels);
+
+    minMaxLoc(chanels[0],NULL,&mB);
+    minMaxLoc(chanels[1],NULL,&mG);
+    minMaxLoc(chanels[2],NULL,&mR);
+
+    cout << "mB: " << mB << endl;
+    cout << "mG: " << mG << endl;
+    cout << "mR: " << mR << endl;
+
+    divide(chanels[0], mB, B);
+    divide(chanels[1], mG, G);
+    divide(chanels[2], mR, R);
+    /*
+    imshow("B", B);
+    imshow("G", G);
+    imshow("R", R);
+
+    minMaxLoc(B,NULL,&mB);
+    minMaxLoc(G,NULL,&mG);
+    minMaxLoc(R,NULL,&mR);
+    
+    cout << "mB: " << mB << endl;
+    cout << "mG: " << mG << endl;
+    cout << "mR: " << mR << endl;
+    */
+
+    add(R, B, RB);
+    subtract(2*G,RB,this->segmented);
+    //threshold(this->segmented,this->segmented, 50, 255, CV_THRESH_OTSU);
+    //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
+    this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+}
+
 void Camera::limiarSeg(Mat image){
     Mat hsv, gray;
     Mat mask1;
     
-    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     cvtColor(image, hsv, COLOR_BGR2HSV);
     inRange(hsv, Scalar(25, 100, 60), Scalar(95, 255,255), mask1);
     bitwise_and(image, image, this->segmented, mask1);
     //cvtColor(this->segmented, gray, COLOR_BGR2GRAY);
     //threshold(gray,this->segmented, 0, 255, 0);
-    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 
 }
 
@@ -754,8 +861,8 @@ void Camera::morphOp(Mat image){
     erode(image,this->erosion,this->element1);
     dilate(this->erosion,this->dilation,this->element2);
     //Image Processing
-    cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
-    threshold(this->binarized,this->binarized, 0, 255, 0);
+    //cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
+    threshold(this->dilation,this->binarized, 0, 255, 0);
     Canny(this->binarized, this->canny, 0, 100, 3);
     binarized.copyTo(this->morph);
     this->tempos << "Finalizando a Erosão e Dilatação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
@@ -767,8 +874,8 @@ void Camera::morphologicalOperations(Mat image){
     erode(this->segmented,this->erosion,this->element1);
     dilate(this->erosion,this->dilation,this->element2);
     //Image Processing
-    cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
-    threshold(this->binarized,this->binarized, 0, 255, 0);
+    //cvtColor(this->dilation, this->binarized, COLOR_BGR2GRAY, CV_8UC1);
+    threshold(this->dilation,this->binarized, 0, 255, 0);
     //Skeletonization
     Mat skel(this->binarized.size(), CV_8UC1, Scalar(0));
     Mat temp;
@@ -982,7 +1089,7 @@ void Camera::findingCenters(Mat image){
         //this->datalog << this->points[i] << endl;
 		circle(this->point, this->points[i], 4, color, -1, 8, 0 );
 	}
-	imshow("Centroides filtrados", this->point);
+	//imshow("Centroides filtrados", this->point);
 	//this->datalog << "Quantidade de Centroides Filtrados  " << points.size() << endl;
     this->tempos << "Finalizando Finding Centers: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
@@ -1621,7 +1728,7 @@ void Camera::expanding_lines(vector<Point2f> coef_retas, double mn, double mx){
         }
         
     }
-    cout << lines.size() << endl;
+    //cout << lines.size() << endl;
 	this->lines_a = lines_a;
 	this->lines = lines;
     this->tempos << "Finalizando Expanding Lines: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
