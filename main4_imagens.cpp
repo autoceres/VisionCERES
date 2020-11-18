@@ -27,6 +27,7 @@ int main(int argc, char *argv[]){
     cam.dataLog(name_arq, "Metodo4");
     
     cam.frame = imread(cam.img_fn, IMREAD_COLOR);
+    resize(cam.frame, cam.frame, Size(360,480));
     cam.gettingSize(cam.frame.cols,cam.frame.rows);
     
     cam.frame.copyTo(cam.frame_final);
@@ -45,7 +46,8 @@ int main(int argc, char *argv[]){
     imshow("E",cam.erosion);
     imshow("D",cam.dilation);
     imshow("Bin", cam.binarized);
-    cam.KMeans(cam.morph, 10);
+    waitKey(0);
+    cam.KMeans(cam.morph, 3, 10);
 
     cam.eigens(cam.pline);
     cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
