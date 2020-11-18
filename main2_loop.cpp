@@ -29,39 +29,37 @@ int main(int argc, char *argv[]){
             cam.dataLog(name_arq, "Metodo3");
 
             cam.frame = imread(cam.img_fn, IMREAD_COLOR);
+            resize(cam.frame, cam.frame, Size(360,480));
             cam.gettingSize(cam.frame.cols,cam.frame.rows);
         
             cam.frame.copyTo(cam.frame_final);
             cam.creatingRoi(cam.frame);
-            //cam.Segmentation(cam.frame_roi);
-            //imshow("Seg",cam.segmented);
             
-            cam.Segmentation2(cam.frame_roi);
-            //imshow("Seg2",cam.segmented);
+            cam.Segmentation(cam.frame_roi);
+            //imshow("Segmentation", cam.segmented);
             
-            cam.erodeConfig(3, 3);
-            cam.dilateConfig(5, 5);
+            cam.erodeConfig(3, 1);
+            cam.dilateConfig(7, 7);
             cam.skeletonConfig(3, 3);
             
             cam.morphOp(cam.segmented);
             //cam.morphologicalOperations(cam.segmented);
 
             cam.findingCenters(cam.morph);
-            cam.ordinating(cam.morph, 30);
+            cam.ordinating(cam.morph, 15);
             cam.eigens(cam.pline);
             cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
-            //cam.MMQ(2);
-            //cam.R2();
-            cam.expanding_lines_a(cam.coef_retas, 30, 135);
+            cam.vanishing_point(cam.coef_retas);
+            cam.expanding_lines_a(cam.coef_retas, 60, 120);
             cam.drawLines();
-            
+
             cam.writingFile(name_arq);
             imwrite(name,cam.frame_final);
             
             cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
             cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
 
-            cout << i << endl;
+            //cout << i << endl;
         
             cam.datalog.close();
             cam.tempos.close();
