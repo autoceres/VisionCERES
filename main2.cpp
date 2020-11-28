@@ -36,10 +36,10 @@ int main(int argc, char *argv[]){
         cam.morphologicalOperations(cam.segmented);
         imshow("Morfologica",cam.skeleton);
         cam.findingCenters(cam.morph);
-        cam.ordinating(cam.morph);
+        cam.ordinating(cam.morph, 20);
         cam.MMQ(7);
         //cam.R2();
-        cam.expanding_lines(cam.mmq);
+        cam.expanding_lines(cam.mmq, 0.87, -0.7);
         cam.drawLines();
         imshow("Resultado",cam.frame_final);
         
