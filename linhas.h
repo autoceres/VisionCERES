@@ -40,9 +40,12 @@ class Camera{
 
     int pb;
     
+<<<<<<< HEAD
     int number_pixel;
     int thresh;
 
+=======
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
     string img_ext = ".png";
     string img_fn;
 
@@ -78,8 +81,11 @@ class Camera{
     string original;
     string processed;
     string name;
+<<<<<<< HEAD
     
     vector<vector<Point>> contours;
+=======
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 
     vector<Point2f> points;
     vector<Point2f> points2;
@@ -163,12 +169,15 @@ class Camera{
     void eigenLines(vector<Mat> eigvect, vector<Mat> eigvals, vector<Point2f> med);
     void KMeans(Mat image, int min, int max);
 
+<<<<<<< HEAD
     Mat imfill(Mat image);
     Mat strips(Mat strip, int number_pixel);
     Mat imquantize(Mat image, int thresh);
     Mat concatenate(Mat strip1, Mat strip2, Mat strip3, Mat strip4, Mat strip5, Mat strip6, Mat strip7, Mat strip8, Mat strip9, 
                     Mat strip10, Mat strip11, Mat strip12, Mat strip13, Mat strip14, Mat strip15, Mat strip16, Mat strip17,
                     Mat strip18, Mat strip19, Mat strip20);
+=======
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
     void coefs1(vector<Vec4d> &vv); //Calcula os coeficientes das retas do HoughP
     void intersections(vector<pair<double,double>> coef_retas);
     void retas_med(vector<Vec4d> &pontos); //Calcula as retas médias no método antigo
@@ -1084,6 +1093,7 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 	for(size_t i = 0;i<pontos.size();i++){
 	//this->datalog << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
 		if(((pontos[i+1][2] - pontos[i][2])>-50)&&((pontos[i+1][2] - pontos[i][2])<50)){
+<<<<<<< HEAD
             if(pontos[i][2] - pontos[i][0]){
 			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
 			int b = (pontos[i][1] - a*pontos[i][0]);
@@ -1093,23 +1103,39 @@ void Camera::retas_med(vector<Vec4d> &pontos){
             j++;
             //cout << " ta: " << ta << " tb: " << tb << " j: " << j << endl;
             }
+=======
+			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
+			int b = (pontos[i][1] - a*pontos[i][0]);
+            
+            ta += a;
+            tb += b; 
+            j++;
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 		}
 		else{
 			Vec4d med;
 			vector<Vec4d> classes;
 			//this->datalog << "xi =  " << trans[0] << "  yi =  " << trans[1] << "  xf =  "  << trans[2] << " yf = " << trans[3] << endl;
+<<<<<<< HEAD
 			if(pontos[i][2] - pontos[i][0]){
             int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
+=======
+			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 			int b = (pontos[i][1] - a*pontos[i][0]);
             
             ta += a;
             tb += b;
             j++;
+<<<<<<< HEAD
             
             //cout << " ta: " << ta << " tb: " << tb << " j: " << j << endl;
             ans.push_back(make_pair((ta/j),(tb/j)));
             }
             //cout << "a: " << (ta/j) << " b: " << (tb/j) << endl;
+=======
+            ans.push_back(make_pair((ta/j),(tb/j)));
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
             ta = 0;
             tb = 0; 
 			j = 0;
@@ -1146,7 +1172,11 @@ void Camera::findingCenters(Mat image){
 	vector<Point2f> mc(contours.size() );
 	for( size_t i = 0; i < contours.size(); i++ ){ 
 		if(mu[i].m00 != 0){
+<<<<<<< HEAD
             mc[i] = Point2f(static_cast<float>(mu[i].m10/mu[i].m00), static_cast<float>(mu[i].m01/mu[i].m00)); 
+=======
+            mc[i] = Point2f(static_cast<float>(mu[i].m10/mu[i].m00),static_cast<float>(mu[i].m01/mu[i].m00)); 
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 		//this->datalog << "Moments" << endl;
         //this->datalog << mc[i] << endl;
         }
@@ -1340,7 +1370,11 @@ void Camera::houghP(Mat image, int nc, double lineLength, double maxGap, double 
             this->linesP.push_back(temp);
         }
     }
+<<<<<<< HEAD
     //imshow("Hough", houghResult);
+=======
+    imshow("Hough", houghResult);
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
     this->tempos << "Finalizando HoughP: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
@@ -1925,7 +1959,11 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas, double mn
     }*/
 
     coef_retas_f = coef_retas;
+<<<<<<< HEAD
     cout << "Numero de retas: " << coef_retas_f.size() << endl;
+=======
+    //cout << "Numero de retas: " << coef_retas_f.size() << endl;
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 	for(int i = 0; i < coef_retas_f.size(); i++){	
         //cout << coef_retas_f[i].first << " " << coef_retas_f[i].second << endl;
 		if ((mn <= abs((atan(coef_retas_f[i].first)*180)/CV_PI)) && (abs((atan(coef_retas_f[i].first)*180)/CV_PI) <= mx)){
@@ -1948,7 +1986,11 @@ void Camera::expanding_lines_a(vector<pair<double,double>> coef_retas, double mn
             x_ord_trans[1] = yi;
             x_ord_trans[2] = xf;
             x_ord_trans[3] = yf;
+<<<<<<< HEAD
             cout << "x_ord_trans" << x_ord_trans << endl;
+=======
+            //cout << "x_ord_trans" << x_ord_trans << endl;
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
             //this->datalog << "x_ord_trans" << x_ord_trans << endl;
             lines.push_back(x_ord_trans);
             lines_a.push_back(x_ord_trans);
@@ -2106,6 +2148,7 @@ void Camera::drawLines_wrong(){
         //waitKey(1000);
     }
     //imshow("Resultado",this->frame_final);
+<<<<<<< HEAD
 }
 
 Mat Camera::imfill(Mat image){
@@ -2189,4 +2232,6 @@ Mat Camera::concatenate(Mat strip1, Mat strip2, Mat strip3, Mat strip4, Mat stri
 
     return H;
 
+=======
+>>>>>>> 56dd136d327954d06da91df890ef7cd489962403
 }
