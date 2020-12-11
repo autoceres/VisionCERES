@@ -6,7 +6,7 @@
 #include "linhas.h"
 
 int main(int argc, char *argv[]){
-    string pref = "_metodo3_saida.png";
+    string pref = "_metodo2_saida.png";
     string path = "Imagens/";
     string name;
     string name_arq;
@@ -17,14 +17,14 @@ int main(int argc, char *argv[]){
     cam.img_fn += cam.img_ext;
     
     name_arq += argv[1];
-    name_arq += "_metodo3";
+    name_arq += "_metodo2";
     name += path;
     name += argv[1];
     name += pref;
 
     cam.name += argv[1];
     
-    cam.dataLog(name_arq, "Metodo3");
+    cam.dataLog(name_arq, "Metodo2");
     
     cam.frame = imread(cam.img_fn, IMREAD_COLOR);
     resize(cam.frame, cam.frame, Size(360,480));

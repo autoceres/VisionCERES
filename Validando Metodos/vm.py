@@ -46,11 +46,24 @@ def main():
         result = open(path_R, 'w+')
         
         for i in range(1, len(path)+1):
-                #print('Imagem', i)
+          
+                print('Imagem', i)
                 image =  "Dataset/" + str(i) + ".png"
                 img = cv.imread(image)
+                if (i>=1 & i<=70):
+                        a = 25
+                if (i>70 & i<=171):
+                        a = 18
+                if (i>171 & i<=242):
+                        a = 30
+                if (i>242 & i<=577):
+                        a = 25
+                if (i>577 & i<=633):
+                        a = 30
 
-                path_M = "Automatico/" + str(i) + ".txt" 
+
+                path_M = "Automatico/" + str(i) + "_metodo3.txt" 
+
                 path_A = "Manual/" + str(i) + ".txt"
 
                 f1 = open(path_A, "r")
@@ -73,15 +86,15 @@ def main():
                         yf2.append(int(float(l[3])))
                         ca2.append(float(l[4]))
 
-                print(len(xi1))
+
+                #print(len(xi1))
+                p = 0
                 for x in range(0, len(xi1)):
                         cv.line(img, (xi1[x], yi1[x]), (xf1[x], yf1[x]), (255,0,0), 2)
-
                         for j in range(0, len(xi2)):  
                                 cv.line(img, (xi2[j], yi2[j]), (xf2[j], yf2[j]), (0,0,255), 2) 
-
-                                if (((xf1[x]-50) < xf2[j] < (xf1[x]+50)) & ((xi1[x]-50) < xi2[j] < (xi1[x]+50))):
-
+                                if (((xf1[x]-a) < xf2[j] < (xf1[x]+a)) & ((xi1[x]-a) < xi2[j] < (xi1[x]+a))):
+                                
                                         det = (xf2[j]-xi2[j])*(234) - (234)*(xf1[x]-xi1[x]) 
                                         distEucli = (abs(xf2[j]-xf1[x]))
                                         angRetas = round(math.degrees(math.atan(abs((ca1[x]-ca2[j])/(1+(ca1[x]*ca2[j]))))), 2)
@@ -95,22 +108,26 @@ def main():
 
                                         if (det == 0.0):
                                                 X1 = [xf1[x], xf2[j], xi1[x]]
-                                                Y1 = [468, 468, 234]
+
+                                                Y1 = [468, 468, 351]
                                                 n1 = len(X1)
                                                 X2 = [xi1[x], xi2[j], xf2[j]]
-                                                Y2 = [234, 234, 468]
+                                                Y2 = [351, 351, 468]
+
                                                 n2 = len(X2)  
                                                 areaTotal = int(areaPoligono1(X1, Y1, n1) + areaPoligono2(X2, Y2, n2))
                                                 #print('Area', areaTotal, "\n")
                                                 area.append(areaTotal)
                                         else:
-                                                s = ((xf2[j]-xi2[j])*(0) - (234)*(xi2[j]-xi1[x]))/det
-                                                t = ((xf1[x]-xi1[x])*(0) - (234)*(xi2[j]-xi1[x]))/det
+
+                                                s = ((xf2[j]-xi2[j])*(0) - (351)*(xi2[j]-xi1[x]))/det
+                                                t = ((xf1[x]-xi1[x])*(0) - (351)*(xi2[j]-xi1[x]))/det
                                                 px = xi1[x] + (xf1[x]-xi1[x])*s
-                                                py = 234 + (234)*s
-                                                if (234 < py and py < 468) & (0 < px and px < 832):
+                                                py = 351 + (351)*s
+                                                if (351 < py and py < 468) & (0 < px and px < 832):
                                                         X1 = [xi1[x], xi2[j], px]
-                                                        Y1 = [234, 234, py]
+                                                        Y1 = [351, 351, py]
+
                                                         n1 = len(X1) 
                                                         X2 = [xf1[x], xf2[j], px]
                                                         Y2 = [468, 468, py]
@@ -121,14 +138,21 @@ def main():
                                                         #print(px, py)
                                                 else:
                                                         X1 = [xf1[x], xf2[j], xi1[x]]
-                                                        Y1 = [468, 468, 234]
+
+                                                        Y1 = [468, 468, 351]
                                                         n1 = len(X1)
                                                         X2 = [xi1[x], xi2[j], xf2[j]]
-                                                        Y2 = [234, 234, 468]
+                                                        Y2 = [351, 351, 468]
+
                                                         n2 = len(X2)
                                                         areaTotal = int(areaPoligono1(X1, Y1, n1) + areaPoligono2(X2, Y2, n2))
                                                         #print('Area', areaTotal, "\n")
                                                         area.append(areaTotal)
+
+                                        	
+                                        if (ang > 130) | (ang < 55) | (areaTotal > 5000) | (distEucli > 50) | (angRetas > 30):
+                                        	p += 1
+
 
                                         txt = result.readlines()
                                         txt.append(str(i))
@@ -143,20 +167,32 @@ def main():
                                         txt.append("\n")
                                         result.writelines(txt)
 
-                acc = round((len(area)/len(xi1))*100, 2)                        
+
+                #print(len(area)-p)
+                acc = round(((len(area)-p)/len(xi1))*100, 2)
+                if (acc > 100.0):
+                        acc = 100.0      
+                if (acc == 0.0):
+                	result.write(str(i) + ' 0 0 0 0 \n') 
+                	        
+                #print(acc)
+                	        
+
                 result.write('Total 0 0 0 0 ' + str(acc) + '\n')
 
                 area.clear()
                 limpaVar1()
                 limpaVar2()
-                cv.imshow('Imagem', img)
-                cv.waitKey(0)
 
-                if cv.waitKey(0) == ord('q'):
-                        break
+                #cv.imshow('Imagem', img)
+                #cv.waitKey(0)
 
-        cv.destroyAllWindows()
+                #if cv.waitKey(0) == ord('q'):
+                #        break
 
+        #cv.destroyAllWindows()
 
 if __name__ == '__main__':
 	main()
+
+

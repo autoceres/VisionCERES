@@ -40,6 +40,9 @@ class Camera{
 
     int pb;
     
+    int number_pixel;
+    int thresh;
+
     string img_ext = ".png";
     string img_fn;
 
@@ -47,6 +50,7 @@ class Camera{
     VideoWriter p;
     VideoWriter c;
 
+    Mat bwImage;
     Mat frame;
     Mat frame_final;
     Mat frame_roi;
@@ -74,6 +78,8 @@ class Camera{
     string original;
     string processed;
     string name;
+    
+    vector<vector<Point>> contours;
 
     vector<Point2f> points;
     vector<Point2f> points2;
@@ -157,6 +163,12 @@ class Camera{
     void eigenLines(vector<Mat> eigvect, vector<Mat> eigvals, vector<Point2f> med);
     void KMeans(Mat image, int min, int max);
 
+    Mat imfill(Mat image);
+    Mat strips(Mat strip, int number_pixel);
+    Mat imquantize(Mat image, int thresh);
+    Mat concatenate(Mat strip1, Mat strip2, Mat strip3, Mat strip4, Mat strip5, Mat strip6, Mat strip7, Mat strip8, Mat strip9, 
+                    Mat strip10, Mat strip11, Mat strip12, Mat strip13, Mat strip14, Mat strip15, Mat strip16, Mat strip17,
+                    Mat strip18, Mat strip19, Mat strip20);
     void coefs1(vector<Vec4d> &vv); //Calcula os coeficientes das retas do HoughP
     void intersections(vector<pair<double,double>> coef_retas);
     void retas_med(vector<Vec4d> &pontos); //Calcula as retas médias no método antigo
@@ -1072,24 +1084,32 @@ void Camera::retas_med(vector<Vec4d> &pontos){
 	for(size_t i = 0;i<pontos.size();i++){
 	//this->datalog << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
 		if(((pontos[i+1][2] - pontos[i][2])>-50)&&((pontos[i+1][2] - pontos[i][2])<50)){
+            if(pontos[i][2] - pontos[i][0]){
 			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
 			int b = (pontos[i][1] - a*pontos[i][0]);
-            
+            //cout << " a: " << a << " b: " << b << " dx: " << pontos[i][2] - pontos[i][0] << " dy: " << pontos[i][3] - pontos[i][1] << endl;
             ta += a;
             tb += b; 
             j++;
+            //cout << " ta: " << ta << " tb: " << tb << " j: " << j << endl;
+            }
 		}
 		else{
 			Vec4d med;
 			vector<Vec4d> classes;
 			//this->datalog << "xi =  " << trans[0] << "  yi =  " << trans[1] << "  xf =  "  << trans[2] << " yf = " << trans[3] << endl;
-			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
+			if(pontos[i][2] - pontos[i][0]){
+            int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
 			int b = (pontos[i][1] - a*pontos[i][0]);
             
             ta += a;
             tb += b;
             j++;
+            
+            //cout << " ta: " << ta << " tb: " << tb << " j: " << j << endl;
             ans.push_back(make_pair((ta/j),(tb/j)));
+            }
+            //cout << "a: " << (ta/j) << " b: " << (tb/j) << endl;
             ta = 0;
             tb = 0; 
 			j = 0;
@@ -1126,7 +1146,7 @@ void Camera::findingCenters(Mat image){
 	vector<Point2f> mc(contours.size() );
 	for( size_t i = 0; i < contours.size(); i++ ){ 
 		if(mu[i].m00 != 0){
-            mc[i] = Point2f(static_cast<float>(mu[i].m10/mu[i].m00),static_cast<float>(mu[i].m01/mu[i].m00)); 
+            mc[i] = Point2f(static_cast<float>(mu[i].m10/mu[i].m00), static_cast<float>(mu[i].m01/mu[i].m00)); 
 		//this->datalog << "Moments" << endl;
         //this->datalog << mc[i] << endl;
         }
@@ -1290,7 +1310,7 @@ void Camera::hough(Mat image, int threshold, double mn, double mx){
                     count++;
                 }
 
-                imshow("Points1",this->init_point);
+                //imshow("Points1",this->init_point);
                 
             }
         }
@@ -1320,7 +1340,7 @@ void Camera::houghP(Mat image, int nc, double lineLength, double maxGap, double 
             this->linesP.push_back(temp);
         }
     }
-    imshow("Hough", houghResult);
+    //imshow("Hough", houghResult);
     this->tempos << "Finalizando HoughP: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 }
 
@@ -2086,4 +2106,87 @@ void Camera::drawLines_wrong(){
         //waitKey(1000);
     }
     //imshow("Resultado",this->frame_final);
+}
+
+Mat Camera::imfill(Mat image){
+    vector<vector<Point>> contours;
+
+    threshold(image,image,0,255,THRESH_BINARY+THRESH_OTSU);
+    Mat bwImage = image.clone();
+    
+    findContours(bwImage, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    drawContours(bwImage, contours, -1, Scalar(255), CV_FILLED);
+
+    return bwImage;
+}
+
+Mat Camera::strips(Mat strip, int number_pixel){
+    int vet = 0;
+    int limite = (number_pixel/4);
+    int v[strip.cols];
+
+    //Soja
+    dilate(strip, strip, getStructuringElement(MORPH_RECT, Size(3,3)));
+    //Cebola
+    //dilate(strip, strip, getStructuringElement(MORPH_ELLIPSE, Size(3,3)));
+    vector<vector<Point>> contours;
+    threshold(strip,strip,0,255,THRESH_BINARY+THRESH_OTSU);
+    Mat bwImage = strip.clone();
+    findContours(bwImage, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    drawContours(bwImage, contours, -1, Scalar(255), CV_FILLED);
+    int n1 = bwImage.cols;
+    int m1 = bwImage.rows;
+    
+    for (int j = 0; j < n1; j++){
+        for (int i = 0; i < m1; i++){
+            if(bwImage.at<uchar>(i, j) == 0){
+                vet += 1;
+            }
+        }   
+        v[j] = vet;
+        vet = 0;             
+    }
+    
+    for (int i = 0; i < n1; i++){
+        if (v[i] < limite){
+            for (int j = 0; j < m1; ++j){
+            bwImage.at<uchar>(j, i) = 255;   
+            } 
+        }
+        if (v[i] >= limite){
+            for (int j = 0; j < m1; ++j){
+            bwImage.at<uchar>(j, i) = 0;   
+            } 
+        }
+    }
+    return bwImage;
+}
+
+Mat Camera::imquantize(Mat image, int thresh){
+	Mat Result = Mat::zeros(image.rows, image.cols, CV_8UC1);
+	for (int i = 0; i < image.rows; i++)
+			for (int j = 0; j < image.cols; j++)
+			{
+				if (image.at<uchar>(i, j) <= thresh)
+					Result.at<uchar>(i, j) = 0;
+				if (image.at<uchar>(i, j) > thresh)
+					Result.at<uchar>(i, j) = 255;
+			}
+	return Result;
+}
+
+Mat Camera::concatenate(Mat strip1, Mat strip2, Mat strip3, Mat strip4, Mat strip5, Mat strip6, Mat strip7, Mat strip8,
+    Mat strip9, Mat strip10, Mat strip11, Mat strip12, Mat strip13, Mat strip14, Mat strip15, Mat strip16, Mat strip17,
+    Mat strip18, Mat strip19, Mat strip20){
+
+    Mat H;
+
+    vconcat(strip1, strip2, H); vconcat(H, strip3, H); vconcat(H, strip4, H); vconcat(H, strip5, H);
+    vconcat(H, strip6, H); vconcat(H, strip7, H); vconcat(H, strip8, H); vconcat(H, strip9, H);
+    vconcat(H, strip10, H); vconcat(H, strip11, H); vconcat(H, strip12, H); vconcat(H, strip13, H);
+    vconcat(H, strip14, H); vconcat(H, strip15, H); vconcat(H, strip16, H); vconcat(H, strip17, H);
+    vconcat(H, strip18, H); vconcat(H, strip19, H); vconcat(H, strip20, H);
+
+    return H;
+
 }
