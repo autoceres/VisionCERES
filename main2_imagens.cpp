@@ -35,8 +35,8 @@ int main(int argc, char *argv[]){
     cam.Segmentation(cam.frame_roi);
     imshow("Seg2",cam.segmented);
     
-    cam.erodeConfig(3, 3);
-    cam.dilateConfig(7, 7);
+    cam.erodeConfig(2, 2);
+    cam.dilateConfig(1, 1);
     cam.skeletonConfig(3, 3);
     
     cam.morphOp(cam.segmented);
@@ -55,10 +55,12 @@ int main(int argc, char *argv[]){
     cam.expanding_lines_a(cam.coef_retas, 60, 120);
 
     cam.drawLines();
-
-    //cam.expanding_lines_a(cam.coef_retas_wrong, 40, 135);
-    //cam.drawLines_wrong();
+    cam.nozzles();
+    cam.expanding_lines_a(cam.coef_retas_wrong, 40, 135);
+    cam.drawLines_wrong();
     imshow("Final", cam.frame_final);
+    imshow("Simulacao", cam.frame_simulacao);
+    
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     

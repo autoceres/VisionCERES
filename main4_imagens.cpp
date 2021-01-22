@@ -33,11 +33,11 @@ int main(int argc, char *argv[]){
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
     
-    cam.Segmentation2(cam.frame_roi);
+    cam.Segmentation(cam.frame_roi);
     imshow("Seg2",cam.segmented);
     
-    cam.erodeConfig(3, 3);
-    cam.dilateConfig(5, 5);
+    cam.erodeConfig(2, 2);
+    cam.dilateConfig(10, 10);
     cam.skeletonConfig(3, 3);
 
     cam.morphOp(cam.segmented);
@@ -46,17 +46,19 @@ int main(int argc, char *argv[]){
     imshow("E",cam.erosion);
     imshow("D",cam.dilation);
     imshow("Bin", cam.binarized);
-    waitKey(0);
-    cam.KMeans(cam.morph, 3, 10);
+    cam.KMeans(cam.morph, 2, 8);
 
     cam.eigens(cam.pline);
     cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
-
-    cam.expanding_lines_a(cam.coef_retas, 30, 135);
+    
+    cam.expanding_lines_a(cam.coef_retas, 60, 120);
     cam.drawLines();
     
+    cam.nozzles();
+
     imshow("Final", cam.frame_final);
-    
+    imshow("Simulacao", cam.frame_simulacao);
+
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     

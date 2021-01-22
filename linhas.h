@@ -27,8 +27,8 @@ using namespace cv;
 class Camera{
     private:
     //Aqui você coloca as variáveis que a classe irá usar, os atributos
-    float k = 0.62;
-    float t = 40.0;
+    float k = 0.65;
+    float t = 20.0;
     
     public:
     int id;
@@ -37,7 +37,7 @@ class Camera{
     int width;
 
     int np_min = 1;
-
+    int nNozzles = 4;
     int pb;
     
     int number_pixel;
@@ -54,6 +54,7 @@ class Camera{
     Mat frame;
     Mat frame_final;
     Mat frame_roi;
+    Mat frame_simulacao;
     Mat otsu;
     Mat segmented;
     Mat erosion;
@@ -196,6 +197,7 @@ class Camera{
     void drawLines_a();
     void drawLines_c();
     void centroids(Mat image);
+    void nozzles();
     
     void writingFile(string name);
     void dataLog(string name, string met);
@@ -320,12 +322,12 @@ void Camera::Segmentation(Mat image){
     
     this->name += extention;
     path += this->name;
-    arq.open(path, ios::out);
+    /*arq.open(path, ios::out);
     
     if(!arq){
         cout << "Falha ao abrir o DataLog da Segmentação"  << endl;
         abort();
-    }
+    }*/
     
     split(image, chanels);
     add(chanels[2], chanels[0], RB);
@@ -361,7 +363,7 @@ void Camera::Segmentation(Mat image){
     //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
     this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 
-    arq.close();
+    //arq.close();
     //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 
 }
@@ -792,15 +794,15 @@ void Camera::eigenLines(vector<Mat> eigvect, vector<Mat> eigvals, vector<Point2f
         //cout << eivecx1 << " " << eivecy1 << " " << lb1 << endl;
         //cout << temp1[0] << " " << temp1[1] << " " << temp1[2] << " " << temp1[3] << endl;
         double ang = (atan((temp1[3] - temp1[1])/(temp1[2] - temp1[0]))*180)/CV_PI;
-        if((60 <= abs(ang)) && (abs(ang) <= 90)){
+        if((60 <= abs(ang)) && (abs(ang) <= 120)){
             double a = (temp1[3] - temp1[1])/(temp1[2] - temp1[0]);
             double lin = (temp1[1] - (a*temp1[0]));
             cf.push_back(make_pair(a,lin));
             //lines.push_back(temp1);
-            //cout << "Aceito, angulo: " << ang << endl;
+            cout << "Aceito, angulo: " << ang << endl;
         }
         else{
-            //cout << "Rejeitado, angulo: " << ang << endl;
+            cout << "Rejeitado, angulo: " << ang << endl;
         }  
     }
     this->coef_retas = cf;
@@ -949,7 +951,7 @@ void Camera::KMeans(Mat image, int min, int max){
     }
     cout << "Numero de cluster: " << (clus + 3) << " labels " << labels.size() << endl;
     */
-    p.resize(clus + 3);
+    p.resize(clus + min);
     //cout << " Tamanho: " << p.size() << endl;
 
     img = Mat::zeros(Size(image.cols,image.rows), CV_8UC3);
@@ -968,8 +970,8 @@ void Camera::KMeans(Mat image, int min, int max){
         circle( img, c, 5, Scalar(0,255,0), -1, LINE_AA );
     }
     //cout << "Compactness: " << compactness << endl;
-    //imshow("clusters", img);
-    //waitKey(1000);
+    imshow("clusters", img);
+    waitKey(1000);
 
     this->pline = p;
 }
@@ -1083,7 +1085,7 @@ void Camera::retas_med(vector<Vec4d> &pontos){
     //this->datalog << "Retas Med" << endl;
 	for(size_t i = 0;i<pontos.size();i++){
 	//this->datalog << "xi =  " << pontos[i][0] << "  yi =   " << pontos[i][1] << "  xf =  "  << pontos[i][2] << "  yf = " << pontos[i][3] << endl;
-		if(((pontos[i+1][2] - pontos[i][2])>-50)&&((pontos[i+1][2] - pontos[i][2])<50)){
+		if(((pontos[i+1][2] - pontos[i][2])>-30)&&((pontos[i+1][2] - pontos[i][2])<30)){
             if(pontos[i][2] - pontos[i][0]){
 			int a = (pontos[i][3] - pontos[i][1])/(pontos[i][2] - pontos[i][0]);
 			int b = (pontos[i][1] - a*pontos[i][0]);
@@ -1212,15 +1214,7 @@ void Camera::ordinating(Mat image, double range){
     if(this->points.size() != 0){
 	    pline[0].push_back(this->points[0]);
     }
-	//this->datalog << "...adicionando..." << points[0] << "...na classe..." << (pline.size()-1) << endl;
-	//cout << "Quantidade de Centroides Filtrados  " << this->points.size() << endl;
-	/*
-	if((this->points.size()>50)){
-			range = 15;
-			this->np_min = 3;
-			//cout << "Definindo range para...   " << range << endl;
-		}
-	*/
+	
 	for(int i = 1; i<this->points.size(); i++){
 		//if(!(((this->points[i].x < (this->width)*0.02) && (this->points[i].y < (this->height/this->region)*0.35)) || ((this->points[i].x > (this->width)*0.98) && (this->points[i].y < (this->height/this->region)*0.35)))){
             if((this->points[i].x<=(this->points[i-1].x + (range*theta)))){ //&& (abs(this->points[i].y - (points[i-1].y)) < (this->height/this->region)*0.65)){ 
@@ -1793,9 +1787,11 @@ void Camera::vanishing_point(vector<pair<double,double>> coef_retas){
         //cout << check << endl;
         if(check != 0){
             coef_retas_f.push_back(coef_retas[i]);
+            cout << "Aceito " << coef_retas[i].first << endl;
         }
         else{
             coef_retas_w.push_back(coef_retas[i]);
+            cout << "Rejeitado " << coef_retas[i].first << endl;
         }
     }
 
@@ -2069,6 +2065,39 @@ void Camera::estimated_lines(){
         }
     }
     this->lines  = lines;
+}
+
+void Camera::nozzles(){
+    this->frame_simulacao = Mat::zeros(Size(this->width, (this->height + 60)), CV_8UC3);
+    this->frame_final.copyTo(frame_simulacao(Rect(0,0,this->width, this->height)));
+    vector<bool> regions;
+
+
+    regions.clear();
+    for(int i = 0; i< this->nNozzles; i++){
+        regions.push_back(false);
+    }
+
+    for(int i = 0; i < this->lines.size(); i++){
+        for(int j = 1; j <= this->nNozzles; j++){
+            if((lines[i][0] >= ((this->width)/(this->nNozzles))*(j-1)) && (lines[i][0] < ((this->width)/(this->nNozzles))*(j))){
+                regions[j-1] = true;
+            }
+        }
+    }
+
+    for(int i = 0; i< this->nNozzles; i++){
+        if(regions[i] == true){
+            int x = (((this->width)/(this->nNozzles))*(i))+(((this->width)/(this->nNozzles))*0.5);
+            int y = ((this->height) + 30);
+            circle(this->frame_simulacao, Point(x,y), 20, Scalar(0, 255, 0), -1);
+        }
+        else{
+            int x = (((this->width)/(this->nNozzles))*(i))+(((this->width)/(this->nNozzles))*0.5);
+            int y = ((this->height) + 30);
+            circle(this->frame_simulacao, Point(x,y), 20, Scalar(0, 0, 255), -1);
+        }
+    }    
 }
 
 void Camera::drawLines(){
