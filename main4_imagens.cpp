@@ -33,11 +33,14 @@ int main(int argc, char *argv[]){
     cam.frame.copyTo(cam.frame_final);
     cam.creatingRoi(cam.frame);
     
-    cam.Segmentation(cam.frame_roi);
+    cam.Segmentation2(cam.frame_roi);
     imshow("Seg2",cam.segmented);
     
+    cam.Segmentation(cam.frame_roi);
+    imshow("Seg",cam.segmented);
+    
     cam.erodeConfig(2, 2);
-    cam.dilateConfig(10, 10);
+    cam.dilateConfig(7, 7);
     cam.skeletonConfig(3, 3);
 
     cam.morphOp(cam.segmented);
@@ -56,13 +59,48 @@ int main(int argc, char *argv[]){
     
     cam.nozzles();
 
+    /*for(int i = 0; i < cam.lines_a.size(); i++){
+        int xinit = cam.lines_a[i][0];
+        int yinit = 0;
+        int xf = cam.lines_a[i][2];
+        int ex = 4;
+        
+        if(cam.lines_a[i][2] < xinit){
+            if((cam.lines_a[i][2] - 2) > 0){
+                xinit = cam.lines_a[i][2] - 2;
+                int xf = cam.lines_a[i][0];
+            }
+            else{
+                xinit = cam.lines_a[i][2];
+                int xf = cam.lines_a[i][0];
+            } 
+        }
+
+        int dst = int(abs(cam.lines_a[i][0] - cam.lines_a[i][2]) + ex);
+
+        if((xinit + dst) > cam.width){
+            int aux = dst;
+            dst = cam.width - xinit - 1; 
+        }
+
+        
+        int alt = abs(cam.lines_a[i][1] - cam.lines_a[i][3]) - 1; 
+        cout << "xi " << xinit << " yi " << yinit << " width " << dst << " height " << alt << endl;
+        Rect ROI = Rect(xinit, yinit, dst ,alt);
+	    Mat image_roi = cam.morph(ROI);
+        
+        imshow("Area da reta", image_roi);
+        waitKey(0);
+
+    }*/
+
     imshow("Final", cam.frame_final);
     imshow("Simulacao", cam.frame_simulacao);
 
     cam.writingFile(name_arq);
     imwrite(name,cam.frame_final);
     
-    waitKey(0);
+    //waitKey(0);
 
     cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
     cam.all << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;

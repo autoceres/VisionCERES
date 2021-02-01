@@ -332,7 +332,7 @@ void Camera::Segmentation(Mat image){
     split(image, chanels);
     add(chanels[2], chanels[0], RB);
     threshold(RB,M1,this->t,255,0);
-    //imshow("M1",M1); 
+    imshow("M1",M1); 
     for(int i = 0; i<image.cols; i++){						//imagem.size().width = imagem.cols -> dependendo de como a imagem está
 		for(int j = 0; j<image.rows; j++){					//imagem.size().height = imagem.rows -> dependendo de como a imagem está
 			Vec3b color = image.at<Vec3b>(Point(i,j));
@@ -376,9 +376,9 @@ void Camera::Segmentation2(Mat image){
     Mat RB;
     
     split(image, chanels);
-    add(chanels[2], chanels[0], RB);
-    subtract(2*chanels[1],RB,this->segmented);
-    threshold(this->segmented,this->segmented, 60, 255, CV_THRESH_BINARY);
+    add(2.4*chanels[2], 2.4*chanels[0], RB);
+    subtract(4*chanels[1],RB,this->segmented);
+    threshold(this->segmented,this->segmented, 0, 255, CV_THRESH_BINARY);
     //cvtColor(this->segmented,this->segmented, COLOR_GRAY2BGR);
     this->tempos << "Finalizando Segmentação: " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
@@ -469,13 +469,13 @@ void Camera::limiarSeg(Mat image){
     Mat hsv, gray;
     Mat mask1;
     
-    cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     cvtColor(image, hsv, COLOR_BGR2HSV);
     inRange(hsv, Scalar(25, 100, 60), Scalar(95, 255,255), mask1);
     bitwise_and(image, image, this->segmented, mask1);
     //cvtColor(this->segmented, gray, COLOR_BGR2GRAY);
     //threshold(gray,this->segmented, 0, 255, 0);
-    cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
+    //cout << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
 
 }
 
@@ -799,10 +799,10 @@ void Camera::eigenLines(vector<Mat> eigvect, vector<Mat> eigvals, vector<Point2f
             double lin = (temp1[1] - (a*temp1[0]));
             cf.push_back(make_pair(a,lin));
             //lines.push_back(temp1);
-            cout << "Aceito, angulo: " << ang << endl;
+            //cout << "Aceito, angulo: " << ang << endl;
         }
         else{
-            cout << "Rejeitado, angulo: " << ang << endl;
+            //cout << "Rejeitado, angulo: " << ang << endl;
         }  
     }
     this->coef_retas = cf;
@@ -926,13 +926,13 @@ void Camera::KMeans(Mat image, int min, int max){
     }
 
     int clus = 0;
-    double a = (elbow[(elbow.size() - 1)] - elbow[0])/(max - 3);
-    double c = (elbow[0] - a*3);
+    double a = (elbow[(elbow.size() - 1)] - elbow[0])/(max - min);
+    double c = (elbow[0] - a*min);
     vector<double> distancia;
     distancia.clear();
 
     for(int i = 0; i < elbow.size(); i++){
-        double d = abs(a*(i+3) - elbow[i] + (c))/(sqrt((a*a) + 1));
+        double d = abs(a*(i+min) - elbow[i] + (c))/(sqrt((a*a) + 1));
         distancia.push_back(d);
         //cout << "d " << d << endl;
     }
@@ -970,9 +970,9 @@ void Camera::KMeans(Mat image, int min, int max){
         circle( img, c, 5, Scalar(0,255,0), -1, LINE_AA );
     }
     //cout << "Compactness: " << compactness << endl;
-    imshow("clusters", img);
+    /*imshow("clusters", img);
     waitKey(1000);
-
+*/
     this->pline = p;
 }
 
@@ -1448,7 +1448,7 @@ void Camera::prevision(Mat image){
         graph.push_back(px);
         circle(g, Point((graph.size() - 1),(image.rows - px)), 3, Scalar(255,0,0),-1,8,0);
         imshow("GRAPH", g);
-        waitKey(50);
+        waitKey(10);
         px = 0; 
     }
 }
@@ -1787,11 +1787,11 @@ void Camera::vanishing_point(vector<pair<double,double>> coef_retas){
         //cout << check << endl;
         if(check != 0){
             coef_retas_f.push_back(coef_retas[i]);
-            cout << "Aceito " << coef_retas[i].first << endl;
+            //cout << "Aceito " << coef_retas[i].first << endl;
         }
         else{
             coef_retas_w.push_back(coef_retas[i]);
-            cout << "Rejeitado " << coef_retas[i].first << endl;
+            //cout << "Rejeitado " << coef_retas[i].first << endl;
         }
     }
 

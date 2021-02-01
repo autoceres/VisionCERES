@@ -30,6 +30,7 @@ int main(int argc, char *argv[]){
             
             cam.frame = imread(cam.img_fn, IMREAD_COLOR);
             resize(cam.frame, cam.frame, Size(360,480));
+            //imshow("Original", cam.frame);
             cam.gettingSize(cam.frame.cols,cam.frame.rows);
             
             cam.frame.copyTo(cam.frame_final);
@@ -38,22 +39,21 @@ int main(int argc, char *argv[]){
             cam.Segmentation(cam.frame_roi);
             //imshow("Seg2",cam.segmented);
             
-            cam.erodeConfig(3, 3);
+            cam.erodeConfig(2, 2);
             cam.dilateConfig(7, 7);
             cam.skeletonConfig(3, 3);
             
             cam.morphOp(cam.segmented);
             //cam.morphologicalOperations(cam.segmented);
-        
-            cam.KMeans(cam.morph,3, 8);
+            
+            //imshow("Morfologica", cam.morph);
+            //cam.prevision(cam.morph);
+            cam.KMeans(cam.morph,2, 8);
 
             cam.eigens(cam.pline);
             cam.eigenLines(cam.eigvect, cam.eigvals, cam.med);
             cam.vanishing_point(cam.coef_retas);
             
-            cam.expanding_lines_a(cam.coef_retas, 60, 120);
-            sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
-            cam.retas_med(cam.lines_a);
             cam.expanding_lines_a(cam.coef_retas, 60, 120);
             
             cam.drawLines();
@@ -64,11 +64,13 @@ int main(int argc, char *argv[]){
             cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
             cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
             
+            //cout << i << endl;
+
             cam.datalog.close();
             cam.tempos.close();
             cam.all.close();
             
-            cam.cap.release();         
+            cam.cap.release();        
     }
     cout << "Done! " << ((double)clock()/CLOCKS_PER_SEC)*1000 << " ms" << endl;
     destroyAllWindows();

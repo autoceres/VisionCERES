@@ -107,6 +107,8 @@ int main(int argc, char *argv[]){
         
         cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
         cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
+        
+        //cout << i << endl;
 
         cam.datalog.close();
         cam.tempos.close();

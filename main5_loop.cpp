@@ -38,8 +38,8 @@ int main(int argc, char *argv[]){
         cam.Segmentation(cam.frame_roi);
         //imshow("Seg2", cam.segmented);
     
-        cam.erodeConfig(3, 3);
-        cam.dilateConfig(5, 5);
+        cam.erodeConfig(2, 2);
+        cam.dilateConfig(10, 10);
         cam.skeletonConfig(3, 3);
 
         cam.morphOp(cam.segmented);
@@ -49,12 +49,12 @@ int main(int argc, char *argv[]){
         cam.coefs1(cam.linesP);
         //cam.intersections(cam.coef_retas);
         //cam.vanishing_point(cam.coef_retas);
-        cam.expanding_lines_a(cam.coef_retas, 30, 135);
+        cam.expanding_lines_a(cam.coef_retas, 60, 120);
         sort(cam.lines_a.begin(), cam.lines_a.end(), cmpVecxf);
 
         cam.retas_med(cam.lines_a);
         //cam.vanishing_point(cam.coef_retas);
-        cam.expanding_lines_a(cam.coef_med_retas, 30, 135);
+        cam.expanding_lines_a(cam.coef_med_retas, 60, 120);
         cam.drawLines();
         
         cam.writingFile(name_arq);
@@ -62,6 +62,8 @@ int main(int argc, char *argv[]){
         
         cam.tempos << ((double)clock()/CLOCKS_PER_SEC)*1000 << endl;
         cam.all << (((double)clock()/CLOCKS_PER_SEC)*1000 - init) << endl;
+
+        //cout << i << endl;
 
         cam.datalog.close();
         cam.tempos.close();

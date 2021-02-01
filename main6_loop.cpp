@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
 		//waitKey(0);
 
 		resize(ent,frame, Size(360,480));
-		imshow("Resize", frame); 
+		//imshow("Resize", frame); 
 		//waitKey(0);
 		if(frame.empty()){
 			printf(" Erro ao abrir a imagem\n");
@@ -81,14 +81,14 @@ int main(int argc, char *argv[]){
 				}
 			}
 		}
-		imshow("Segmentacao", frame); 	
+		//imshow("Segmentacao", frame); 	
 		//waitKey(0);
 		frame.copyTo(src); 
 		erode(src, erosion_dst, element1);
-		imshow("Erosao", erosion_dst);
+		//imshow("Erosao", erosion_dst);
 		//waitKey(0);
 		dilate( erosion_dst, dilation_dst, element2 );
-		imshow( "Dilatacao", dilation_dst );
+		//imshow( "Dilatacao", dilation_dst );
 		//waitKey(0);
 
 		int thresh = 100;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
 			Scalar color = Scalar( 255,255,255 );
 			drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
 		}
-		imshow( "Contornos", drawing );
+		//imshow( "Contornos", drawing );
 		//waitKey(0);
 		vector<Moments> mu(contours.size());
 		for( size_t i = 0; i < contours.size(); i++ ){ 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]){
 			Scalar color = Scalar(0,0,255);
 			circle(drawi, mc[i], 4, color,-1,8,0);
 		}
-		imshow( "Centros", drawi );
+		//imshow( "Centros", drawi );
 		//waitKey(0);
 		vector<Vec4i> linesP; 
 		HoughLinesP(canny_output, linesP, 1, CV_PI/180, 75, 300,650 );
@@ -126,11 +126,12 @@ int main(int argc, char *argv[]){
 			Vec4i l = linesP[i];
 			line( exi, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,0,255), 3, LINE_AA); 
 		}
-		imshow("Hough", exi);
-		waitKey(0); 
+		//imshow("Hough", exi);
+		//waitKey(0); 
 		cam.writingFile(name_arq);
-        imwrite(name,cam.frame_final);
+        //imwrite(name,cam.frame_final);
 		destroyAllWindows();
+		//cout << i << endl;
 	}
 	return 0;
 }

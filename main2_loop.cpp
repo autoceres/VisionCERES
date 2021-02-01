@@ -38,8 +38,8 @@ int main(int argc, char *argv[]){
             cam.Segmentation(cam.frame_roi);
             //imshow("Segmentation", cam.segmented);
             
-            cam.erodeConfig(3, 1);
-            cam.dilateConfig(7, 7);
+            cam.erodeConfig(2, 2);
+            cam.dilateConfig(1, 1);
             cam.skeletonConfig(3, 3);
             
             cam.morphOp(cam.segmented);
